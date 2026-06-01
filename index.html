@@ -143,7 +143,7 @@ const EMPTY={name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",c
 
   async function savePatient(f){
     setSaving(true);
-    const body={...f,age:parseInt(f.age)||null};
+    const body={...f,age:parseInt(f.age)||null,kosher:f.kosher===true||f.kosher==="true"?true:false};
     delete body.id;
     if(f.id){await dbPatch("patients",f.id,body);setPatients(ps=>ps.map(p=>p.id===f.id?{...p,...body}:p));}
     else{const res=await dbPost("patients",body);if(Array.isArray(res)&&res[0])setPatients(ps=>[res[0],...ps]);}
