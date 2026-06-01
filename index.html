@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/index.html << 'ENDOFFILE'
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -12,13 +11,13 @@ cat > /mnt/user-data/outputs/index.html << 'ENDOFFILE'
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #0F0F14; color: #E8E6F0; font-family: 'Heebo', sans-serif; direction: rtl; }
-input, select, button { font-family: 'Heebo', sans-serif; }
+input, select, button, textarea { font-family: 'Heebo', sans-serif; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const SUPABASE_URL = "https://kvilhsayhhducbviyysb.supabase.co";
+  const SUPABASE_URL = "https://kvilhsayhhducbviyysb.supabase.co";
 const SUPABASE_KEY = "sb_publishable_4j3FZMOUr_Ybm35vdjn_2g_DyMrIhl-";
 const H = {"Content-Type":"application/json","apikey":SUPABASE_KEY,"Authorization":`Bearer ${SUPABASE_KEY}`,"Prefer":"return=representation"};
 
@@ -30,11 +29,12 @@ async function dbDelete(t,id){await fetch(`${SUPABASE_URL}/rest/v1/${t}?id=eq.${
 const STAGES=["טרום-טיפול","בטיפול פעיל","מעקב"];
 const TREATMENTS=["הקרנות","כימותרפיה","שניהם","טרם נקבע"];
 const CATS=["רפואי","דיור","רכב","אוכל","אחר"];
+const KUPOT=["מכבי","כללית","מאוחדת","לאומית","אחר"];
 const SCOL={"טרום-טיפול":"#F59E0B","בטיפול פעיל":"#EF4444","מעקב":"#10B981"};
 const CICO={"דיור":"🏠","רכב":"🚗","אוכל":"🍽️","רפואי":"🏥","אחר":"📋"};
 const today=new Date().toISOString().slice(0,10);
-
 const { useState, useEffect } = React;
+const EMPTY_P={name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",car:"",food:"",notes:"",coordinator:"",languages:"",kupat_holim:"",treatment_start:"",treatment_end:""};
 
 function App() {
   const [patients,setPatients]=useState([]);
@@ -44,8 +44,8 @@ function App() {
   const [filterStage,setFilterStage]=useState("הכל");
   const [search,setSearch]=useState("");
   const [addingP,setAddingP]=useState(false);
-  const [np,setNp]=useState({name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",car:"",food:"",notes:""});
-  const [nt,setNt]=useState({text:"",cat:"רפואי",date:""});
+  const [np,setNp]=useState(EMPTY_P);
+  const [nt,setNt]=useState({text:"",cat:"רפואי",date:"",assignee:""});
   const [saving,setSaving]=useState(false);
 
   useEffect(()=>{loadAll();},[]);
@@ -63,192 +63,169 @@ function App() {
   const filtered=patients.filter(p=>(filterStage==="הכל"||p.stage===filterStage)&&p.name.includes(search));
   const urgentCount=tasks.filter(t=>!t.done&&t.date&&t.date<=today).length;
 
-  async function toggleTask(id,done){
-    setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!done}:t));
-    await dbPatch("tasks",id,{done:!done});
-  }
-  async function addTask(){
-    if(!nt.text.trim()||!selected)return;
-    setSaving(true);
-    const res=await dbPost("tasks",{patient_id:selected,text:nt.text,cat:nt.cat,date:nt.date||null,done:false});
-    if(Array.isArray(res)&&res[0])setTasks(ts=>[...ts,res[0]]);
-    setNt({text:"",cat:"רפואי",date:""});
-    setSaving(false);
-  }
-  async function delTask(id){
-    setTasks(ts=>ts.filter(t=>t.id!==id));
-    await dbDelete("tasks",id);
-  }
-  async function submitP(){
-    if(!np.name.trim())return;
-    setSaving(true);
-    const res=await dbPost("patients",{...np,age:parseInt(np.age)||null});
-    if(Array.isArray(res)&&res[0])setPatients(ps=>[res[0],...ps]);
-    setAddingP(false);
-    setNp({name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",car:"",food:"",notes:""});
-    setSaving(false);
-  }
+  async function toggleTask(id,done){setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!done}:t));await dbPatch("tasks",id,{done:!done});}
+  async function addTask(){if(!nt.text.trim()||!selected)return;setSaving(true);const res=await dbPost("tasks",{patient_id:selected,text:nt.text,cat:nt.cat,date:nt.date||null,done:false,assignee:nt.assignee||null});if(Array.isArray(res)&&res[0])setTasks(ts=>[...ts,res[0]]);setNt({text:"",cat:"רפואי",date:"",assignee:""});setSaving(false);}
+  async function delTask(id){setTasks(ts=>ts.filter(t=>t.id!==id));await dbDelete("tasks",id);}
+  async function submitP(){if(!np.name.trim())return;setSaving(true);const res=await dbPost("patients",{...np,age:parseInt(np.age)||null});if(Array.isArray(res)&&res[0])setPatients(ps=>[res[0],...ps]);setAddingP(false);setNp(EMPTY_P);setSaving(false);}
 
   const card={background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:14,padding:16,cursor:"pointer",marginBottom:12};
   const btn={padding:"10px 16px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:600};
   const inp={width:"100%",background:"#0F0F14",border:"1px solid #2a2a4a",borderRadius:8,padding:"9px 12px",color:"#E8E6F0",fontSize:13,outline:"none",marginBottom:12};
   const badge=(st)=>({padding:"3px 9px",borderRadius:20,fontSize:10,fontWeight:600,background:SCOL[st]+"22",color:SCOL[st],border:`1px solid ${SCOL[st]}44`});
+  const lbl={fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:0.8,marginBottom:4,display:"block"};
 
-  if(loading)return <div style={{textAlign:"center",padding:60,color:"#7c7c9e"}}>טוען...</div>;
+  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",color:"#7c7c9e"}}><div style={{fontSize:32,marginBottom:12}}>🩺</div><div>טוען...</div></div></div>);
 
   if(selected&&patient){
     const done=ptasks.filter(t=>t.done).length;
     const pct=ptasks.length>0?Math.round(done/ptasks.length*100):0;
-    return(
-      <div style={{minHeight:"100vh"}}>
-        <div style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)",padding:"16px 20px",borderBottom:"1px solid #2a2a4a",display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:38,height:38,background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🩺</div>
-          <div><div style={{fontSize:18,fontWeight:700}}>מעקב מטופלים</div><div style={{fontSize:11,color:"#7c7c9e"}}>ניהול תומך מטופלי סרטן</div></div>
+    return(<div style={{minHeight:"100vh"}}>
+      <div style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)",padding:"16px 20px",borderBottom:"1px solid #2a2a4a",display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:38,height:38,background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🩺</div>
+        <div><div style={{fontSize:18,fontWeight:700}}>מעקב מטופלים</div><div style={{fontSize:11,color:"#7c7c9e"}}>ניהול תומך מטופלי סרטן</div></div>
+      </div>
+      <div style={{padding:20,maxWidth:700,margin:"0 auto"}}>
+        <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",color:"#a78bfa",cursor:"pointer",fontSize:14,marginBottom:16,padding:0}}>→ חזרה לרשימה</button>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
+          <div style={{width:50,height:50,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700}}>{patient.name[0]}</div>
+          <div>
+            <div style={{fontSize:20,fontWeight:800}}>{patient.name}</div>
+            <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center",flexWrap:"wrap"}}>
+              <span style={badge(patient.stage)}>{patient.stage}</span>
+              {patient.age&&<span style={{fontSize:11,color:"#7c7c9e"}}>גיל {patient.age}</span>}
+              {patient.kupat_holim&&<span style={{fontSize:11,color:"#7c7c9e"}}>🏥 {patient.kupat_holim}</span>}
+            </div>
+          </div>
         </div>
-        <div style={{padding:20,maxWidth:700,margin:"0 auto"}}>
-          <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",color:"#a78bfa",cursor:"pointer",fontSize:14,marginBottom:16,padding:0}}>→ חזרה לרשימה</button>
-          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
-            <div style={{width:50,height:50,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700}}>{patient.name[0]}</div>
-            <div>
-              <div style={{fontSize:20,fontWeight:800}}>{patient.name}</div>
-              <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center"}}>
-                <span style={badge(patient.stage)}>{patient.stage}</span>
-                <span style={{fontSize:11,color:"#7c7c9e"}}>גיל {patient.age}</span>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+          <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:14}}>
+            <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>טיפול רפואי</div>
+            <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>💊 {patient.treatment}</div>
+            <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>▶️ התחלה: {patient.treatment_start||"לא נקבע"}</div>
+            <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>⏹️ סיום: {patient.treatment_end||"לא נקבע"}</div>
+            {patient.notes&&<div style={{fontSize:12,color:"#ccc"}}>📝 {patient.notes}</div>}
+          </div>
+          <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:14}}>
+            <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>פרטים</div>
+            <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>🗣️ {patient.languages||"לא צוין"}</div>
+            <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>🏥 {patient.kupat_holim||"לא צוין"}</div>
+            {patient.coordinator&&<div style={{fontSize:12,color:"#ccc"}}>👤 מתאם: {patient.coordinator}</div>}
+          </div>
+        </div>
+        <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:14,marginBottom:12}}>
+          <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>לוגיסטיקה</div>
+          <div style={{fontSize:12,color:"#ccc",marginBottom:4}}>🏠 {patient.housing||"לא צוין"}</div>
+          <div style={{fontSize:12,color:"#ccc",marginBottom:4}}>🚗 {patient.car||"לא צוין"}</div>
+          <div style={{fontSize:12,color:"#ccc"}}>🍽️ {patient.food||"לא צוין"}</div>
+        </div>
+        <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontWeight:700}}>משימות</span><span style={{fontSize:11,color:"#a78bfa"}}>{done}/{ptasks.length} ({pct}%)</span></div>
+          <div style={{background:"#0F0F14",borderRadius:6,height:4,marginBottom:12}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/></div>
+          {ptasks.length===0&&<div style={{textAlign:"center",color:"#4a4a6a",padding:12,fontSize:12}}>אין משימות עדיין</div>}
+          {ptasks.map(t=>(<div key={t.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 0",borderBottom:"1px solid #1e1e3a",opacity:t.done?0.5:1}}>
+            <div onClick={()=>toggleTask(t.id,t.done)} style={{width:20,height:20,borderRadius:5,border:t.done?"none":"2px solid #6366f1",background:t.done?"linear-gradient(135deg,#6366f1,#a855f7)":"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}}>{t.done&&<span style={{color:"#fff",fontSize:10}}>✓</span>}</div>
+            <span style={{fontSize:14,flexShrink:0}}>{CICO[t.cat]||"📋"}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,textDecoration:t.done?"line-through":"none",color:t.done?"#666":"#e0e0f0"}}>{t.text}</div>
+              <div style={{display:"flex",gap:10,marginTop:2,flexWrap:"wrap"}}>
+                {t.date&&<span style={{fontSize:10,color:"#666"}}>📅 {t.date}</span>}
+                {t.assignee&&<span style={{fontSize:10,color:"#a78bfa"}}>👤 {t.assignee}</span>}
               </div>
             </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
-            <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:14}}>
-              <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>טיפול</div>
-              <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>💊 {patient.treatment}</div>
-              <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>🏥 {patient.stage}</div>
-              {patient.notes&&<div style={{fontSize:12,color:"#ccc"}}>📝 {patient.notes}</div>}
-            </div>
-            <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:14}}>
-              <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>לוגיסטיקה</div>
-              <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>🏠 {patient.housing||"לא צוין"}</div>
-              <div style={{fontSize:12,color:"#ccc",marginBottom:6}}>🚗 {patient.car||"לא צוין"}</div>
-              <div style={{fontSize:12,color:"#ccc"}}>🍽️ {patient.food||"לא צוין"}</div>
-            </div>
-          </div>
-          <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:16}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
-              <span style={{fontWeight:700}}>משימות</span>
-              <span style={{fontSize:11,color:"#a78bfa"}}>{done}/{ptasks.length} ({pct}%)</span>
-            </div>
-            <div style={{background:"#0F0F14",borderRadius:6,height:4,marginBottom:12}}>
-              <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/>
-            </div>
-            {ptasks.map(t=>(
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #1e1e3a",opacity:t.done?0.5:1}}>
-                <div onClick={()=>toggleTask(t.id,t.done)} style={{width:20,height:20,borderRadius:5,border:t.done?"none":"2px solid #6366f1",background:t.done?"linear-gradient(135deg,#6366f1,#a855f7)":"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  {t.done&&<span style={{color:"#fff",fontSize:10}}>✓</span>}
-                </div>
-                <span style={{fontSize:14}}>{CICO[t.cat]||"📋"}</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,textDecoration:t.done?"line-through":"none",color:t.done?"#666":"#e0e0f0"}}>{t.text}</div>
-                  {t.date&&<div style={{fontSize:10,color:"#666"}}>📅 {t.date}</div>}
-                </div>
-                <button onClick={()=>delTask(t.id)} style={{background:"none",border:"none",color:"#4a4a6a",cursor:"pointer",fontSize:14}}>✕</button>
-              </div>
-            ))}
-            <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
-              <input style={{flex:1,minWidth:120,background:"#0F0F14",border:"1px solid #2a2a4a",borderRadius:7,padding:"8px 10px",color:"#E8E6F0",fontSize:12,outline:"none"}} placeholder="משימה חדשה..." value={nt.text} onChange={e=>setNt(n=>({...n,text:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addTask()}/>
-              <select style={{background:"#0F0F14",border:"1px solid #2a2a4a",borderRadius:7,padding:"8px",color:"#E8E6F0",fontSize:11,outline:"none"}} value={nt.cat} onChange={e=>setNt(n=>({...n,cat:e.target.value}))}>
-                {CATS.map(c=><option key={c}>{c}</option>)}
-              </select>
-              <input type="date" style={{background:"#0F0F14",border:"1px solid #2a2a4a",borderRadius:7,padding:"8px",color:"#E8E6F0",fontSize:11,outline:"none"}} value={nt.date} onChange={e=>setNt(n=>({...n,date:e.target.value}))}/>
+            <button onClick={()=>delTask(t.id)} style={{background:"none",border:"none",color:"#4a4a6a",cursor:"pointer",fontSize:14}}>✕</button>
+          </div>))}
+          <div style={{marginTop:14,background:"#0F0F14",borderRadius:10,padding:12}}>
+            <div style={{fontSize:11,color:"#7c7c9e",marginBottom:8,fontWeight:600}}>משימה חדשה</div>
+            <input style={{...inp,marginBottom:8}} placeholder="תיאור המשימה..." value={nt.text} onChange={e=>setNt(n=>({...n,text:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addTask()}/>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              <select style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:7,padding:"7px 8px",color:"#E8E6F0",fontSize:11,outline:"none"}} value={nt.cat} onChange={e=>setNt(n=>({...n,cat:e.target.value}))}>{CATS.map(c=><option key={c}>{c}</option>)}</select>
+              <input style={{flex:1,minWidth:100,background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:7,padding:"7px 8px",color:"#E8E6F0",fontSize:11,outline:"none"}} placeholder="מי מטפל?" value={nt.assignee} onChange={e=>setNt(n=>({...n,assignee:e.target.value}))}/>
+              <input type="date" style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:7,padding:"7px 8px",color:"#E8E6F0",fontSize:11,outline:"none"}} value={nt.date} onChange={e=>setNt(n=>({...n,date:e.target.value}))}/>
               <button style={btn} onClick={addTask} disabled={saving}>{saving?"...":"+ הוסף"}</button>
             </div>
           </div>
         </div>
       </div>
-    );
-  }
-
-  return(
-    <div style={{minHeight:"100vh"}}>
-      <div style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)",padding:"16px 20px",borderBottom:"1px solid #2a2a4a",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <div style={{width:38,height:38,background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🩺</div>
-          <div><div style={{fontSize:18,fontWeight:700}}>מעקב מטופלים</div><div style={{fontSize:11,color:"#7c7c9e"}}>ניהול תומך מטופלי סרטן</div></div>
-        </div>
-        <div style={{display:"flex",gap:16}}>
-          <div style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{patients.length}</div><div style={{fontSize:10,color:"#7c7c9e"}}>מטופלים</div></div>
-          <div style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{tasks.filter(t=>t.done).length}/{tasks.length}</div><div style={{fontSize:10,color:"#7c7c9e"}}>משימות</div></div>
-          {urgentCount>0&&<div style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#ef4444"}}>{urgentCount}</div><div style={{fontSize:10,color:"#7c7c9e"}}>דחוף</div></div>}
-        </div>
+    </div>);
+          }
+  return(<div style={{minHeight:"100vh"}}>
+    <div style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)",padding:"16px 20px",borderBottom:"1px solid #2a2a4a",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:38,height:38,background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🩺</div>
+        <div><div style={{fontSize:18,fontWeight:700}}>מעקב מטופלים</div><div style={{fontSize:11,color:"#7c7c9e"}}>ניהול תומך מטופלי סרטן</div></div>
       </div>
-      <div style={{padding:"16px 20px",maxWidth:700,margin:"0 auto"}}>
-        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
-          <input style={{flex:1,minWidth:160,background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:10,padding:"9px 14px",color:"#E8E6F0",fontSize:13,outline:"none"}} placeholder="🔍 חיפוש..." value={search} onChange={e=>setSearch(e.target.value)}/>
-          {["הכל",...STAGES].map(s=>(
-            <button key={s} onClick={()=>setFilterStage(s)} style={{padding:"8px 12px",borderRadius:8,border:filterStage===s?"none":"1px solid #2a2a4a",background:filterStage===s?"linear-gradient(135deg,#6366f1,#a855f7)":"#1a1a2e",color:filterStage===s?"#fff":"#9090b0",cursor:"pointer",fontSize:11,fontWeight:filterStage===s?600:400}}>{s}</button>
-          ))}
-          <button style={btn} onClick={()=>setAddingP(true)}>+ מטופל חדש</button>
-        </div>
-        {filtered.length===0&&<div style={{textAlign:"center",color:"#4a4a6a",padding:40,fontSize:13}}>אין מטופלים</div>}
-        {filtered.map(p=>{
-          const pt=tasks.filter(t=>t.patient_id===p.id);
-          const done=pt.filter(t=>t.done).length;
-          const pct=pt.length>0?Math.round(done/pt.length*100):0;
-          const urgent=pt.some(t=>!t.done&&t.date&&t.date<=today);
-          return(
-            <div key={p.id} style={card} onClick={()=>setSelected(p.id)}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:38,height:38,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700}}>{p.name[0]}</div>
-                  <div>
-                    <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
-                    <div style={{fontSize:11,color:"#7c7c9e"}}>גיל {p.age} · {p.treatment}</div>
-                  </div>
-                </div>
-                <span style={badge(p.stage)}>{p.stage}</span>
-              </div>
-              <div style={{fontSize:11,color:"#9090b0",marginBottom:3}}>🏠 {p.housing||"לא צוין"}</div>
-              <div style={{fontSize:11,color:"#9090b0",marginBottom:3}}>🚗 {p.car||"לא צוין"}</div>
-              <div style={{fontSize:11,color:"#9090b0",marginBottom:6}}>🍽️ {p.food||"לא צוין"}</div>
-              {urgent&&<span style={{background:"#ef444422",color:"#ef4444",border:"1px solid #ef444444",borderRadius:6,padding:"3px 8px",fontSize:10,fontWeight:600}}>⚠️ משימה דחופה</span>}
-              {pt.length>0&&<div>
-                <div style={{display:"flex",justifyContent:"space-between",marginTop:8,marginBottom:3,fontSize:10,color:"#7c7c9e"}}><span>משימות</span><span>{done}/{pt.length}</span></div>
-                <div style={{background:"#0F0F14",borderRadius:6,height:4}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/></div>
-              </div>}
-            </div>
-          );
-        })}
+      <div style={{display:"flex",gap:16}}>
+        <div style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{patients.length}</div><div style={{fontSize:10,color:"#7c7c9e"}}>מטופלים</div></div>
+        <div style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#a78bfa"}}>{tasks.filter(t=>t.done).length}/{tasks.length}</div><div style={{fontSize:10,color:"#7c7c9e"}}>משימות</div></div>
+        {urgentCount>0&&<div style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:800,color:"#ef4444"}}>{urgentCount}</div><div style={{fontSize:10,color:"#7c7c9e"}}>דחוף</div></div>}
       </div>
-      {addingP&&(
-        <div style={{position:"fixed",inset:0,background:"#00000088",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100}} onClick={e=>e.target===e.currentTarget&&setAddingP(false)}>
-          <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:18,padding:24,width:"90%",maxWidth:460,maxHeight:"85vh",overflowY:"auto"}}>
-            <div style={{fontSize:17,fontWeight:700,marginBottom:18}}>➕ מטופל חדש</div>
-            {[["שם מלא *","name","text"],["גיל","age","number"],["דיור","housing","text"],["רכב","car","text"],["אוכל","food","text"],["הערות","notes","text"]].map(([l,k,t])=>(
-              <div key={k}>
-                <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:0.8,marginBottom:4}}>{l}</div>
-                <input style={inp} type={t} value={np[k]} onChange={e=>setNp(n=>({...n,[k]:e.target.value}))}/>
-              </div>
-            ))}
-            <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:0.8,marginBottom:4}}>שלב</div>
-            <select style={inp} value={np.stage} onChange={e=>setNp(n=>({...n,stage:e.target.value}))}>
-              {STAGES.map(s=><option key={s}>{s}</option>)}
-            </select>
-            <div style={{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:0.8,marginBottom:4}}>סוג טיפול</div>
-            <select style={inp} value={np.treatment} onChange={e=>setNp(n=>({...n,treatment:e.target.value}))}>
-              {TREATMENTS.map(t=><option key={t}>{t}</option>)}
-            </select>
-            <div style={{display:"flex",gap:8,marginTop:8}}>
-              <button onClick={()=>setAddingP(false)} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid #2a2a4a",background:"transparent",color:"#9090b0",cursor:"pointer",fontSize:13}}>ביטול</button>
-              <button onClick={submitP} disabled={saving} style={{flex:2,padding:"10px",borderRadius:9,border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>{saving?"שומר...":"הוסף מטופל"}</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  );
+    <div style={{padding:"16px 20px",maxWidth:700,margin:"0 auto"}}>
+      <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap",alignItems:"center"}}>
+        <input style={{flex:1,minWidth:160,background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:10,padding:"9px 14px",color:"#E8E6F0",fontSize:13,outline:"none"}} placeholder="🔍 חיפוש..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        {["הכל",...STAGES].map(s=>(<button key={s} onClick={()=>setFilterStage(s)} style={{padding:"8px 12px",borderRadius:8,border:filterStage===s?"none":"1px solid #2a2a4a",background:filterStage===s?"linear-gradient(135deg,#6366f1,#a855f7)":"#1a1a2e",color:filterStage===s?"#fff":"#9090b0",cursor:"pointer",fontSize:11,fontWeight:filterStage===s?600:400}}>{s}</button>))}
+        <button style={btn} onClick={()=>setAddingP(true)}>+ מטופל חדש</button>
+      </div>
+      {filtered.length===0&&<div style={{textAlign:"center",color:"#4a4a6a",padding:40,fontSize:13}}>אין מטופלים</div>}
+      {filtered.map(p=>{
+        const pt=tasks.filter(t=>t.patient_id===p.id);
+        const done=pt.filter(t=>t.done).length;
+        const pct=pt.length>0?Math.round(done/pt.length*100):0;
+        const urgent=pt.some(t=>!t.done&&t.date&&t.date<=today);
+        return(<div key={p.id} style={card} onClick={()=>setSelected(p.id)}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,flexShrink:0}}>{p.name[0]}</div>
+              <div>
+                <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
+                <div style={{fontSize:11,color:"#7c7c9e"}}>{p.age?`גיל ${p.age} · `:""}{p.treatment}</div>
+              </div>
+            </div>
+            <span style={badge(p.stage)}>{p.stage}</span>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:4}}>
+            {p.coordinator&&<div style={{fontSize:11,color:"#9090b0"}}>👤 {p.coordinator}</div>}
+            {p.kupat_holim&&<div style={{fontSize:11,color:"#9090b0"}}>🏥 {p.kupat_holim}</div>}
+            {p.languages&&<div style={{fontSize:11,color:"#9090b0"}}>🗣️ {p.languages}</div>}
+            {p.treatment_start&&<div style={{fontSize:11,color:"#9090b0"}}>▶️ {p.treatment_start}</div>}
+          </div>
+          <div style={{fontSize:11,color:"#9090b0",marginBottom:3}}>🏠 {p.housing||"לא צוין"} · 🚗 {p.car||"לא צוין"}</div>
+          {urgent&&<span style={{background:"#ef444422",color:"#ef4444",border:"1px solid #ef444444",borderRadius:6,padding:"3px 8px",fontSize:10,fontWeight:600,display:"inline-block",marginTop:4}}>⚠️ משימה דחופה</span>}
+          {pt.length>0&&<div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:8,marginBottom:3,fontSize:10,color:"#7c7c9e"}}><span>משימות</span><span>{done}/{pt.length}</span></div>
+            <div style={{background:"#0F0F14",borderRadius:6,height:4}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/></div>
+          </div>}
+        </div>);
+      })}
+    </div>
+    {addingP&&(<div style={{position:"fixed",inset:0,background:"#00000088",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}} onClick={e=>e.target===e.currentTarget&&setAddingP(false)}>
+      <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:18,padding:24,width:"100%",maxWidth:500,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{fontSize:17,fontWeight:700,marginBottom:18}}>➕ מטופל חדש</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>שם מלא *</label><input style={inp} placeholder="ישראל ישראלי" value={np.name} onChange={e=>setNp(n=>({...n,name:e.target.value}))}/></div>
+          <div><label style={lbl}>גיל</label><input style={inp} type="number" value={np.age} onChange={e=>setNp(n=>({...n,age:e.target.value}))}/></div>
+          <div><label style={lbl}>קופת חולים</label><select style={inp} value={np.kupat_holim} onChange={e=>setNp(n=>({...n,kupat_holim:e.target.value}))}><option value="">בחר...</option>{KUPOT.map(k=><option key={k}>{k}</option>)}</select></div>
+          <div><label style={lbl}>שלב</label><select style={inp} value={np.stage} onChange={e=>setNp(n=>({...n,stage:e.target.value}))}>{STAGES.map(s=><option key={s}>{s}</option>)}</select></div>
+          <div><label style={lbl}>סוג טיפול</label><select style={inp} value={np.treatment} onChange={e=>setNp(n=>({...n,treatment:e.target.value}))}>{TREATMENTS.map(t=><option key={t}>{t}</option>)}</select></div>
+          <div><label style={lbl}>תחילת טיפול</label><input style={inp} type="date" value={np.treatment_start} onChange={e=>setNp(n=>({...n,treatment_start:e.target.value}))}/></div>
+          <div><label style={lbl}>סיום טיפול</label><input style={inp} type="date" value={np.treatment_end} onChange={e=>setNp(n=>({...n,treatment_end:e.target.value}))}/></div>
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>שפות</label><input style={inp} placeholder="עברית, אנגלית..." value={np.languages} onChange={e=>setNp(n=>({...n,languages:e.target.value}))}/></div>
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>מתאם בארגון</label><input style={inp} placeholder="שם האחראי/ת" value={np.coordinator} onChange={e=>setNp(n=>({...n,coordinator:e.target.value}))}/></div>
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>דיור</label><input style={inp} placeholder="כתובת דיור" value={np.housing} onChange={e=>setNp(n=>({...n,housing:e.target.value}))}/></div>
+          <div><label style={lbl}>רכב</label><input style={inp} placeholder="פרטי רכב" value={np.car} onChange={e=>setNp(n=>({...n,car:e.target.value}))}/></div>
+          <div><label style={lbl}>אוכל</label><input style={inp} placeholder="ארגון / עצמאי" value={np.food} onChange={e=>setNp(n=>({...n,food:e.target.value}))}/></div>
+          <div style={{gridColumn:"1/-1"}}><label style={lbl}>הערות</label><input style={inp} placeholder="הערות" value={np.notes} onChange={e=>setNp(n=>({...n,notes:e.target.value}))}/></div>
+        </div>
+        <div style={{display:"flex",gap:8,marginTop:8}}>
+          <button onClick={()=>setAddingP(false)} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid #2a2a4a",background:"transparent",color:"#9090b0",cursor:"pointer",fontSize:13}}>ביטול</button>
+          <button onClick={submitP} disabled={saving} style={{flex:2,padding:"10px",borderRadius:9,border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>{saving?"שומר...":"הוסף מטופל"}</button>
+        </div>
+      </div>
+    </div>)}
+  </div>);
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
-ENDOFFILE
-echo "done"
