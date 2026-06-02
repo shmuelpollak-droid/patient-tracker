@@ -132,7 +132,8 @@ function PatientForm({init,onSave,onCancel,saving}){
           <input type="checkbox" id="trans" checked={f.needs_translation||false} onChange={e=>set("needs_translation",e.target.checked)} style={{width:18,height:18,accentColor:"#6366f1"}}/>
           <label htmlFor="trans" style={{fontSize:13,color:"#1a1a2e",cursor:"pointer"}}>יש צורך בתרגום</label>
         </div>
-        {f.needs_translation&&<div style={{gridColumn:"1/-1"}}><label style={S.lbl}>תאריך ושעת תרגום</label><input style={inp2} type="datetime-local" value={f.translation_datetime||""} onChange={e=>set("translation_datetime",e.target.value)}/></div>}
+     {f.needs_translation&&<div style={{gridColumn:"1/-1"}}><label style={S.lbl}>תאריך ושעת תרגום</label><input style={inp2} type="datetime-local" value={f.translation_datetime||""} onChange={e=>set("translation_datetime",e.target.value)}/></div>}
+{f.needs_translation&&<div style={{gridColumn:"1/-1"}}><label style={S.lbl}>משך תרגום (דקות)</label><input style={inp2} type="number" placeholder="60" value={f.translation_duration||""} onChange={e=>set("translation_duration",e.target.value)}/></div>}   
       </div>
 
       <div style={sec}>אוכל</div>
