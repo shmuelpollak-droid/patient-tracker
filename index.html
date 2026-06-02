@@ -194,7 +194,7 @@ function ChatTab(){
   );
 
   return(
-    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 110px)"}}>
+    <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 180px)"}}>
       <div style={{flex:1,overflowY:"auto",padding:"12px 16px"}}>
         {messages.length===0&&<div style={{textAlign:"center",color:"#9ca3af",padding:40}}>אין הודעות עדיין</div>}
         {messages.map(m=>{
@@ -204,7 +204,7 @@ function ChatTab(){
             <div key={m.id} style={{display:"flex",justifyContent:isMe?"flex-start":"flex-end",marginBottom:10}}>
               <div style={{maxWidth:"75%"}}>
                 {!isMe&&<div style={{fontSize:10,color:"#6b7280",marginBottom:2,textAlign:"right"}}>{m.sender}</div>}
-                <div style={{background:isMe?"linear-gradient(135deg,#6366f1,#a855f7)":"#fff",color:isMe?"#fff":"#1a1a2e",padding:"8px 12px",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",fontSize:13,boxShadow:"0 1px 3px #0001",border:isMe?"none":"1px solid #e5e7f0"}}>
+                <div style={{background:isMe?"linear-gradient(135deg,#6366f1,#a855f7)":"#fff",color:isMe?"#fff":"#1a1a2e",padding:"8px 12px",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",fontSize:16,boxShadow:"0 1px 3px #0001",border:isMe?"none":"1px solid #e5e7f0"}}>
                   {m.text}
                 </div>
                 <div style={{fontSize:10,color:"#9ca3af",marginTop:2,textAlign:isMe?"left":"right"}}>{time}</div>
