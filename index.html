@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #0F0F14; color: #E8E6F0; font-family: 'Heebo', sans-serif; direction: rtl; }
+body { background: #f0f2f8; color: #1a1a2e; font-family: 'Heebo', sans-serif; direction: rtl; }
 input, select, button, textarea { font-family: 'Heebo', sans-serif; }
 </style>
 </head>
@@ -27,62 +27,53 @@ async function dbDelete(t,id){await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{
 
 function cleanPatient(f){
   return {
-    name:f.name||"",
-    age:parseInt(f.age)||null,
-    stage:f.stage||"טרום-טיפול",
-    treatment:f.treatment||"טרם נקבע",
-    housing:f.housing||null,
-    car:f.car||null,
-    food:f.food||null,
-    notes:f.notes||null,
-    coordinator:f.coordinator||null,
-    languages:f.languages||null,
-    kupat_holim:f.kupat_holim||null,
-    treatment_start:f.treatment_start||null,
-    treatment_end:f.treatment_end||null,
-    contact_name:f.contact_name||null,
-    contact_phone:f.contact_phone||null,
-    contact_email:f.contact_email||null,
-    contact_whatsapp:f.contact_whatsapp||null,
-    doctor_israel:f.doctor_israel||null,
-    food_allergies:f.food_allergies||null,
-    kosher:f.kosher?"true":"false",
-    medical_notes:f.medical_notes||null,
+    name:f.name||"",age:parseInt(f.age)||null,stage:f.stage||"טרום-טיפול",treatment:f.treatment||"טרם נקבע",
+    housing:f.housing||null,car:f.car||null,food:f.food||null,food_frequency:f.food_frequency||null,
+    notes:f.notes||null,coordinator:f.coordinator||null,languages:f.languages||null,
+    kupat_holim:f.kupat_holim||null,treatment_start:f.treatment_start||null,treatment_end:f.treatment_end||null,
+    contact_name:f.contact_name||null,contact_phone:f.contact_phone||null,contact_email:f.contact_email||null,
+    contact_whatsapp:f.contact_whatsapp||null,contact1_relation:f.contact1_relation||null,
+    contact2_name:f.contact2_name||null,contact2_phone:f.contact2_phone||null,
+    contact2_email:f.contact2_email||null,contact2_whatsapp:f.contact2_whatsapp||null,contact2_relation:f.contact2_relation||null,
+    doctor_israel:f.doctor_israel||null,doctor_austria:f.doctor_austria||null,
+    food_allergies:f.food_allergies||null,kosher:f.kosher?"true":"false",medical_notes:f.medical_notes||null,
   };
 }
 
 const STAGES=["טרום-טיפול","בטיפול פעיל","מעקב"];
 const TREATMENTS=["הקרנות","כימותרפיה","שניהם","טרם נקבע"];
 const CATS=["רפואי","דיור","רכב","אוכל","אחר"];
-const KUPOT=["מכבי","כללית","מאוחדת","לאומית","אחר"];
-const SCOL={"טרום-טיפול":"#F59E0B","בטיפול פעיל":"#EF4444","מעקב":"#10B981"};
+const KUPOT=["מכבי","כללית","מאוחדת","לאומית","ביטוח פרטי","אחר"];
+const FOOD_FREQ=["כל יום","שבתות","מידי פעם","אחר"];
+const SCOL={"טרום-טיפול":"#e67e22","בטיפול פעיל":"#e74c3c","מעקב":"#27ae60"};
 const CICO={"דיור":"🏠","רכב":"🚗","אוכל":"🍽️","רפואי":"🏥","אחר":"📋"};
 const today=new Date().toISOString().slice(0,10);
 const {useState,useEffect}=React;
-const EMPTY={name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",car:"",food:"",notes:"",coordinator:"",languages:"",kupat_holim:"",treatment_start:"",treatment_end:"",contact_name:"",contact_phone:"",contact_email:"",contact_whatsapp:"",doctor_israel:"",food_allergies:"",kosher:false,medical_notes:""};
-  const S={
+const EMPTY={name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",car:"",food:"",food_frequency:"",notes:"",coordinator:"",languages:"",kupat_holim:"",treatment_start:"",treatment_end:"",contact_name:"",contact_phone:"",contact_email:"",contact_whatsapp:"",contact1_relation:"",contact2_name:"",contact2_phone:"",contact2_email:"",contact2_whatsapp:"",contact2_relation:"",doctor_israel:"",doctor_austria:"",food_allergies:"",kosher:false,medical_notes:""};
+
+const S={
   btn:{padding:"10px 16px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:600},
-  inp:{width:"100%",background:"#0F0F14",border:"1px solid #2a2a4a",borderRadius:8,padding:"9px 12px",color:"#E8E6F0",fontSize:13,outline:"none",marginBottom:10},
-  lbl:{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:0.8,marginBottom:4,display:"block"},
-  card:{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:14,padding:16,marginBottom:12},
+  inp:{width:"100%",background:"#fff",border:"1px solid #dde1f0",borderRadius:8,padding:"9px 12px",color:"#1a1a2e",fontSize:13,outline:"none",marginBottom:10},
+  lbl:{fontSize:10,color:"#6b7280",textTransform:"uppercase",letterSpacing:0.8,marginBottom:4,display:"block"},
+  card:{background:"#fff",border:"1px solid #e5e7f0",borderRadius:14,padding:16,marginBottom:12,boxShadow:"0 1px 4px #0001"},
   badge:(st)=>({padding:"3px 9px",borderRadius:20,fontSize:10,fontWeight:600,background:SCOL[st]+"22",color:SCOL[st],border:`1px solid ${SCOL[st]}44`}),
-  section:{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:12,padding:14,marginBottom:12},
-  sTitle:{fontSize:10,color:"#7c7c9e",textTransform:"uppercase",letterSpacing:1,marginBottom:10},
-  row:{fontSize:12,color:"#ccc",marginBottom:6,display:"flex",gap:6},
+  section:{background:"#fff",border:"1px solid #e5e7f0",borderRadius:12,padding:14,marginBottom:12},
+  sTitle:{fontSize:10,color:"#6b7280",textTransform:"uppercase",letterSpacing:1,marginBottom:10},
+  row:{fontSize:12,color:"#374151",marginBottom:6,display:"flex",gap:6},
 };
 
 function Header({patients,tasks}){
   const urgent=tasks.filter(t=>!t.done&&t.date&&t.date<=today).length;
   return(
-    <div style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)",padding:"14px 20px",borderBottom:"1px solid #2a2a4a",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:50}}>
+    <div style={{background:"linear-gradient(135deg,#6366f1,#a855f7)",padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:50,boxShadow:"0 2px 12px #6366f133"}}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{width:36,height:36,background:"linear-gradient(135deg,#6366f1,#a855f7)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🩺</div>
-        <div><div style={{fontSize:16,fontWeight:700}}>מעקב מטופלים</div><div style={{fontSize:10,color:"#7c7c9e"}}>ניהול תומך מטופלי סרטן</div></div>
+        <div style={{width:36,height:36,background:"#ffffff33",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🩺</div>
+        <div><div style={{fontSize:16,fontWeight:700,color:"#fff"}}>מעקב מטופלים</div><div style={{fontSize:10,color:"#e0d7ff"}}>ניהול תומך מטופלי כתף</div></div>
       </div>
       <div style={{display:"flex",gap:14}}>
-        <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#a78bfa"}}>{patients.length}</div><div style={{fontSize:9,color:"#7c7c9e"}}>מטופלים</div></div>
-        <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#a78bfa"}}>{tasks.filter(t=>t.done).length}/{tasks.length}</div><div style={{fontSize:9,color:"#7c7c9e"}}>משימות</div></div>
-        {urgent>0&&<div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#ef4444"}}>{urgent}</div><div style={{fontSize:9,color:"#7c7c9e"}}>דחוף</div></div>}
+        <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{patients.length}</div><div style={{fontSize:9,color:"#e0d7ff"}}>מטופלים</div></div>
+        <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{tasks.filter(t=>t.done).length}/{tasks.length}</div><div style={{fontSize:9,color:"#e0d7ff"}}>משימות</div></div>
+        {urgent>0&&<div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,color:"#fde68a"}}>{urgent}</div><div style={{fontSize:9,color:"#e0d7ff"}}>דחוף</div></div>}
       </div>
     </div>
   );
@@ -92,10 +83,12 @@ function PatientForm({init,onSave,onCancel,saving}){
   const [f,setF]=useState(init);
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
   const inp2={...S.inp,marginBottom:0};
+  const sec={fontSize:11,color:"#6366f1",fontWeight:700,marginBottom:10,borderBottom:"1px solid #e5e7f0",paddingBottom:6,marginTop:4};
   return(
-    <div style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:18,padding:24,width:"100%",maxWidth:540,maxHeight:"92vh",overflowY:"auto"}}>
-      <div style={{fontSize:17,fontWeight:700,marginBottom:20}}>{init.id?"✏️ עריכת מטופל":"➕ מטופל חדש"}</div>
-      <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,marginBottom:10,borderBottom:"1px solid #2a2a4a",paddingBottom:6}}>פרטים בסיסיים</div>
+    <div style={{background:"#f8f9ff",border:"1px solid #e5e7f0",borderRadius:18,padding:24,width:"100%",maxWidth:540,maxHeight:"92vh",overflowY:"auto"}}>
+      <div style={{fontSize:17,fontWeight:700,marginBottom:20,color:"#1a1a2e"}}>{init.id?"✏️ עריכת מטופל":"➕ מטופל חדש"}</div>
+
+      <div style={sec}>פרטים בסיסיים</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>שם מלא *</label><input style={inp2} value={f.name} onChange={e=>set("name",e.target.value)}/></div>
         <div><label style={S.lbl}>גיל</label><input style={inp2} type="number" value={f.age||""} onChange={e=>set("age",e.target.value)}/></div>
@@ -107,41 +100,59 @@ function PatientForm({init,onSave,onCancel,saving}){
         <div><label style={S.lbl}>שפות</label><input style={inp2} placeholder="עברית, אנגלית..." value={f.languages||""} onChange={e=>set("languages",e.target.value)}/></div>
         <div><label style={S.lbl}>מתאם בארגון</label><input style={inp2} value={f.coordinator||""} onChange={e=>set("coordinator",e.target.value)}/></div>
       </div>
-      <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,marginBottom:10,borderBottom:"1px solid #2a2a4a",paddingBottom:6}}>פן רפואי</div>
+
+      <div style={sec}>פן רפואי</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-        <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>רופא מטפל בארץ</label><input style={inp2} value={f.doctor_israel||""} onChange={e=>set("doctor_israel",e.target.value)}/></div>
+        <div><label style={S.lbl}>רופא מטפל בארץ</label><input style={inp2} value={f.doctor_israel||""} onChange={e=>set("doctor_israel",e.target.value)}/></div>
+        <div><label style={S.lbl}>רופא מטפל באוסטריה</label><input style={inp2} value={f.doctor_austria||""} onChange={e=>set("doctor_austria",e.target.value)}/></div>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>הערות רפואיות חשובות</label><textarea style={{...inp2,height:70,resize:"none"}} value={f.medical_notes||""} onChange={e=>set("medical_notes",e.target.value)}/></div>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>הערות כלליות</label><input style={inp2} value={f.notes||""} onChange={e=>set("notes",e.target.value)}/></div>
       </div>
-      <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,marginBottom:10,borderBottom:"1px solid #2a2a4a",paddingBottom:6}}>אוכל</div>
+
+      <div style={sec}>אוכל</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>ספק אוכל</label><input style={inp2} placeholder="ארגון / עצמאי" value={f.food||""} onChange={e=>set("food",e.target.value)}/></div>
-        <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>רגישויות לאוכל</label><input style={inp2} placeholder="גלוטן, בוטנים..." value={f.food_allergies||""} onChange={e=>set("food_allergies",e.target.value)}/></div>
+        <div><label style={S.lbl}>מעוניינים לקבל</label><select style={inp2} value={f.food_frequency||""} onChange={e=>set("food_frequency",e.target.value)}><option value="">בחר...</option>{FOOD_FREQ.map(ff=><option key={ff}>{ff}</option>)}</select></div>
+        <div><label style={S.lbl}>רגישויות לאוכל</label><input style={inp2} placeholder="גלוטן, בוטנים..." value={f.food_allergies||""} onChange={e=>set("food_allergies",e.target.value)}/></div>
         <div style={{gridColumn:"1/-1",display:"flex",alignItems:"center",gap:10}}>
           <input type="checkbox" id="kosher" checked={f.kosher||false} onChange={e=>set("kosher",e.target.checked)} style={{width:18,height:18,accentColor:"#6366f1"}}/>
-          <label htmlFor="kosher" style={{fontSize:13,color:"#E8E6F0",cursor:"pointer"}}>כשר</label>
+          <label htmlFor="kosher" style={{fontSize:13,color:"#1a1a2e",cursor:"pointer"}}>כשר</label>
         </div>
       </div>
-      <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,marginBottom:10,borderBottom:"1px solid #2a2a4a",paddingBottom:6}}>לוגיסטיקה</div>
+
+      <div style={sec}>לוגיסטיקה</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>דיור</label><input style={inp2} value={f.housing||""} onChange={e=>set("housing",e.target.value)}/></div>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>רכב</label><input style={inp2} value={f.car||""} onChange={e=>set("car",e.target.value)}/></div>
       </div>
-      <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,marginBottom:10,borderBottom:"1px solid #2a2a4a",paddingBottom:6}}>איש קשר</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+
+      <div style={sec}>איש קשר ראשון</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>שם</label><input style={inp2} value={f.contact_name||""} onChange={e=>set("contact_name",e.target.value)}/></div>
+        <div><label style={S.lbl}>קרבה משפחתית</label><input style={inp2} placeholder="בן/בת זוג, ילד..." value={f.contact1_relation||""} onChange={e=>set("contact1_relation",e.target.value)}/></div>
         <div><label style={S.lbl}>טלפון</label><input style={inp2} type="tel" value={f.contact_phone||""} onChange={e=>set("contact_phone",e.target.value)}/></div>
         <div><label style={S.lbl}>וואטסאפ</label><input style={inp2} type="tel" value={f.contact_whatsapp||""} onChange={e=>set("contact_whatsapp",e.target.value)}/></div>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>אימייל</label><input style={inp2} type="email" value={f.contact_email||""} onChange={e=>set("contact_email",e.target.value)}/></div>
       </div>
+
+      <div style={sec}>איש קשר שני</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+        <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>שם</label><input style={inp2} value={f.contact2_name||""} onChange={e=>set("contact2_name",e.target.value)}/></div>
+        <div><label style={S.lbl}>קרבה משפחתית</label><input style={inp2} placeholder="בן/בת זוג, ילד..." value={f.contact2_relation||""} onChange={e=>set("contact2_relation",e.target.value)}/></div>
+        <div><label style={S.lbl}>טלפון</label><input style={inp2} type="tel" value={f.contact2_phone||""} onChange={e=>set("contact2_phone",e.target.value)}/></div>
+        <div><label style={S.lbl}>וואטסאפ</label><input style={inp2} type="tel" value={f.contact2_whatsapp||""} onChange={e=>set("contact2_whatsapp",e.target.value)}/></div>
+        <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>אימייל</label><input style={inp2} type="email" value={f.contact2_email||""} onChange={e=>set("contact2_email",e.target.value)}/></div>
+      </div>
+
       <div style={{display:"flex",gap:8}}>
-        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid #2a2a4a",background:"transparent",color:"#9090b0",cursor:"pointer",fontSize:13}}>ביטול</button>
+        <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid #dde1f0",background:"#fff",color:"#6b7280",cursor:"pointer",fontSize:13}}>ביטול</button>
         <button onClick={()=>onSave(f)} disabled={saving} style={{flex:2,padding:"10px",borderRadius:9,border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>{saving?"שומר...":"שמור"}</button>
       </div>
     </div>
   );
-        }
-  function App(){
+}
+
+function App(){
   const [patients,setPatients]=useState([]);
   const [tasks,setTasks]=useState([]);
   const [loading,setLoading]=useState(true);
@@ -171,13 +182,8 @@ function PatientForm({init,onSave,onCancel,saving}){
   async function savePatient(f){
     setSaving(true);
     const body=cleanPatient(f);
-    if(f.id){
-      await dbPatch("patients",f.id,body);
-      setPatients(ps=>ps.map(p=>p.id===f.id?{...p,...body}:p));
-    } else {
-      const res=await dbPost("patients",body);
-      if(Array.isArray(res)&&res[0])setPatients(ps=>[res[0],...ps]);
-    }
+    if(f.id){await dbPatch("patients",f.id,body);setPatients(ps=>ps.map(p=>p.id===f.id?{...p,...body}:p));}
+    else{const res=await dbPost("patients",body);if(Array.isArray(res)&&res[0])setPatients(ps=>[res[0],...ps]);}
     setFormData(null);setSaving(false);
   }
 
@@ -185,103 +191,137 @@ function PatientForm({init,onSave,onCancel,saving}){
     await dbDelete("patients",id);
     setPatients(ps=>ps.filter(p=>p.id!==id));
     setTasks(ts=>ts.filter(t=>t.patient_id!==id));
-    setConfirmDelete(null);
-    setSelected(null);
+    setConfirmDelete(null);setSelected(null);
   }
 
   async function toggleTask(id,done){setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!done}:t));await dbPatch("tasks",id,{done:!done});}
   async function addTask(){if(!nt.text.trim()||!selected)return;setSaving(true);const res=await dbPost("tasks",{patient_id:selected,text:nt.text,cat:nt.cat,date:nt.date||null,done:false,assignee:nt.assignee||null});if(Array.isArray(res)&&res[0])setTasks(ts=>[...ts,res[0]]);setNt({text:"",cat:"רפואי",date:"",assignee:""});setSaving(false);}
   async function delTask(id){setTasks(ts=>ts.filter(t=>t.id!==id));await dbDelete("tasks",id);}
 
-  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",color:"#7c7c9e"}}><div style={{fontSize:32,marginBottom:12}}>🩺</div><div>טוען...</div></div></div>);
+  if(loading)return(<div style={{minHeight:"100vh",background:"#f0f2f8",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center",color:"#6b7280"}}><div style={{fontSize:32,marginBottom:12}}>🩺</div><div>טוען...</div></div></div>);
 
   if(selected&&patient){
     const done=ptasks.filter(t=>t.done).length;
     const pct=ptasks.length>0?Math.round(done/ptasks.length*100):0;
     const isKosher=patient.kosher==="true"||patient.kosher===true;
-    return(<div style={{minHeight:"100vh"}}><Header patients={patients} tasks={tasks}/>
+    return(<div style={{minHeight:"100vh",background:"#f0f2f8"}}><Header patients={patients} tasks={tasks}/>
       <div style={{padding:16,maxWidth:700,margin:"0 auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",color:"#a78bfa",cursor:"pointer",fontSize:14,padding:0}}>→ חזרה</button>
+          <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",color:"#6366f1",cursor:"pointer",fontSize:14,padding:0,fontWeight:600}}>→ חזרה</button>
           <div style={{display:"flex",gap:8}}>
             <button onClick={()=>setFormData({...patient})} style={{...S.btn,padding:"8px 14px",fontSize:12}}>✏️ עריכה</button>
-            <button onClick={()=>setConfirmDelete(patient.id)} style={{padding:"8px 14px",borderRadius:10,border:"none",background:"#ef444422",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:600}}>🗑️ מחיקה</button>
+            <button onClick={()=>setConfirmDelete(patient.id)} style={{padding:"8px 14px",borderRadius:10,border:"none",background:"#fee2e2",color:"#ef4444",cursor:"pointer",fontSize:12,fontWeight:600}}>🗑️ מחיקה</button>
           </div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:16}}>
-          <div style={{width:48,height:48,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700,flexShrink:0}}>{patient.name[0]}</div>
-          <div><div style={{fontSize:20,fontWeight:800}}>{patient.name}</div>
-            <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap",alignItems:"center"}}>
-              <span style={S.badge(patient.stage)}>{patient.stage}</span>
-              {patient.age&&<span style={{fontSize:11,color:"#7c7c9e"}}>גיל {patient.age}</span>}
-              {isKosher&&<span style={{fontSize:10,background:"#10b98122",color:"#10b981",border:"1px solid #10b98144",borderRadius:10,padding:"2px 7px"}}>כשר ✓</span>}
+
+        <div style={{...S.card,marginBottom:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{width:52,height:52,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff",flexShrink:0}}>{patient.name[0]}</div>
+            <div>
+              <div style={{fontSize:20,fontWeight:800,color:"#1a1a2e"}}>{patient.name}</div>
+              <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap",alignItems:"center"}}>
+                <span style={S.badge(patient.stage)}>{patient.stage}</span>
+                {patient.age&&<span style={{fontSize:11,color:"#6b7280"}}>גיל {patient.age}</span>}
+                {isKosher&&<span style={{fontSize:10,background:"#d1fae5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:10,padding:"2px 7px"}}>כשר ✓</span>}
+              </div>
             </div>
           </div>
         </div>
+
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-          <div style={S.section}><div style={S.sTitle}>טיפול רפואי</div>
+          <div style={S.section}>
+            <div style={S.sTitle}>טיפול רפואי</div>
             <div style={S.row}><span>💊</span><span>{patient.treatment}</span></div>
-            {patient.doctor_israel&&<div style={S.row}><span>👨‍⚕️</span><span>{patient.doctor_israel}</span></div>}
+            {patient.doctor_israel&&<div style={S.row}><span>👨‍⚕️</span><span>ארץ: {patient.doctor_israel}</span></div>}
+            {patient.doctor_austria&&<div style={S.row}><span>👨‍⚕️</span><span>אוסטריה: {patient.doctor_austria}</span></div>}
             <div style={S.row}><span>▶️</span><span>{patient.treatment_start||"לא נקבע"}</span></div>
             <div style={S.row}><span>⏹️</span><span>{patient.treatment_end||"לא נקבע"}</span></div>
-            {patient.medical_notes&&<div style={{...S.row,background:"#ef444411",borderRadius:6,padding:"6px 8px",color:"#fca5a5"}}><span>⚠️</span><span style={{fontSize:11}}>{patient.medical_notes}</span></div>}
+            {patient.medical_notes&&<div style={{fontSize:11,color:"#dc2626",background:"#fee2e2",borderRadius:6,padding:"6px 8px",marginTop:4}}><span>⚠️ </span>{patient.medical_notes}</div>}
           </div>
-          <div style={S.section}><div style={S.sTitle}>פרטים</div>
+          <div style={S.section}>
+            <div style={S.sTitle}>פרטים</div>
             <div style={S.row}><span>🏥</span><span>{patient.kupat_holim||"לא צוין"}</span></div>
             <div style={S.row}><span>🗣️</span><span>{patient.languages||"לא צוין"}</span></div>
             {patient.coordinator&&<div style={S.row}><span>👤</span><span>{patient.coordinator}</span></div>}
+            {patient.notes&&<div style={S.row}><span>📝</span><span>{patient.notes}</span></div>}
           </div>
         </div>
-        <div style={S.section}><div style={S.sTitle}>אוכל</div>
-          <div style={S.row}><span>🍽️</span><span>{patient.food||"לא צוין"}</span></div>
-          {patient.food_allergies&&<div style={S.row}><span>⚠️</span><span>רגישויות: {patient.food_allergies}</span></div>}
-          <div style={S.row}><span>{isKosher?"✅":"❌"}</span><span>כשר</span></div>
+
+        <div style={S.section}>
+          <div style={S.sTitle}>אוכל</div>
+          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+            <div style={S.row}><span>🍽️</span><span>{patient.food||"לא צוין"}</span></div>
+            {patient.food_frequency&&<div style={S.row}><span>📅</span><span>{patient.food_frequency}</span></div>}
+            {patient.food_allergies&&<div style={S.row}><span>⚠️</span><span>רגישויות: {patient.food_allergies}</span></div>}
+            <div style={S.row}><span>{isKosher?"✅":"❌"}</span><span>כשר</span></div>
+          </div>
         </div>
-        {(patient.contact_name||patient.contact_phone)&&<div style={S.section}><div style={S.sTitle}>איש קשר</div>
-          {patient.contact_name&&<div style={S.row}><span>👤</span><span>{patient.contact_name}</span></div>}
-          {patient.contact_phone&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact_phone}`} style={{color:"#a78bfa"}}>{patient.contact_phone}</a></div>}
-          {patient.contact_whatsapp&&<div style={S.row}><span>💬</span><a href={`https://wa.me/${patient.contact_whatsapp}`} style={{color:"#25d366"}}>{patient.contact_whatsapp}</a></div>}
-          {patient.contact_email&&<div style={S.row}><span>✉️</span><a href={`mailto:${patient.contact_email}`} style={{color:"#a78bfa"}}>{patient.contact_email}</a></div>}
+
+        {(patient.contact_name||patient.contact2_name)&&<div style={S.section}>
+          <div style={S.sTitle}>אנשי קשר</div>
+          {patient.contact_name&&<div style={{marginBottom:patient.contact2_name?12:0}}>
+            <div style={{fontSize:11,color:"#6366f1",fontWeight:600,marginBottom:4}}>איש קשר ראשון {patient.contact1_relation?`(${patient.contact1_relation})`:""}</div>
+            <div style={S.row}><span>👤</span><span>{patient.contact_name}</span></div>
+            {patient.contact_phone&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact_phone}`} style={{color:"#6366f1"}}>{patient.contact_phone}</a></div>}
+            {patient.contact_whatsapp&&<div style={S.row}><span>💬</span><a href={`https://wa.me/${patient.contact_whatsapp}`} style={{color:"#25d366"}}>{patient.contact_whatsapp}</a></div>}
+            {patient.contact_email&&<div style={S.row}><span>✉️</span><a href={`mailto:${patient.contact_email}`} style={{color:"#6366f1"}}>{patient.contact_email}</a></div>}
+          </div>}
+          {patient.contact2_name&&<div>
+            <div style={{fontSize:11,color:"#6366f1",fontWeight:600,marginBottom:4}}>איש קשר שני {patient.contact2_relation?`(${patient.contact2_relation})`:""}</div>
+            <div style={S.row}><span>👤</span><span>{patient.contact2_name}</span></div>
+            {patient.contact2_phone&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact2_phone}`} style={{color:"#6366f1"}}>{patient.contact2_phone}</a></div>}
+            {patient.contact2_whatsapp&&<div style={S.row}><span>💬</span><a href={`https://wa.me/${patient.contact2_whatsapp}`} style={{color:"#25d366"}}>{patient.contact2_whatsapp}</a></div>}
+            {patient.contact2_email&&<div style={S.row}><span>✉️</span><a href={`mailto:${patient.contact2_email}`} style={{color:"#6366f1"}}>{patient.contact2_email}</a></div>}
+          </div>}
         </div>}
-        <div style={S.section}><div style={S.sTitle}>לוגיסטיקה</div>
+
+        <div style={S.section}>
+          <div style={S.sTitle}>לוגיסטיקה</div>
           <div style={S.row}><span>🏠</span><span>{patient.housing||"לא צוין"}</span></div>
           <div style={S.row}><span>🚗</span><span>{patient.car||"לא צוין"}</span></div>
         </div>
+
         <div style={S.section}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontWeight:700,fontSize:14}}>משימות</span><span style={{fontSize:11,color:"#a78bfa"}}>{done}/{ptasks.length} ({pct}%)</span></div>
-          <div style={{background:"#0F0F14",borderRadius:6,height:4,marginBottom:12}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/></div>
-          {ptasks.length===0&&<div style={{textAlign:"center",color:"#4a4a6a",padding:10,fontSize:12}}>אין משימות עדיין</div>}
-          {ptasks.map(t=>(<div key={t.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 0",borderBottom:"1px solid #1e1e3a",opacity:t.done?0.5:1}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+            <span style={{fontWeight:700,fontSize:14,color:"#1a1a2e"}}>משימות</span>
+            <span style={{fontSize:11,color:"#6366f1"}}>{done}/{ptasks.length} ({pct}%)</span>
+          </div>
+          <div style={{background:"#e5e7f0",borderRadius:6,height:6,marginBottom:12}}>
+            <div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/>
+          </div>
+          {ptasks.length===0&&<div style={{textAlign:"center",color:"#9ca3af",padding:10,fontSize:12}}>אין משימות עדיין</div>}
+          {ptasks.map(t=>(<div key={t.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 0",borderBottom:"1px solid #f3f4f6",opacity:t.done?0.5:1}}>
             <div onClick={()=>toggleTask(t.id,t.done)} style={{width:20,height:20,borderRadius:5,border:t.done?"none":"2px solid #6366f1",background:t.done?"linear-gradient(135deg,#6366f1,#a855f7)":"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}}>{t.done&&<span style={{color:"#fff",fontSize:10}}>✓</span>}</div>
             <span style={{fontSize:13,flexShrink:0}}>{CICO[t.cat]||"📋"}</span>
-            <div style={{flex:1}}><div style={{fontSize:13,textDecoration:t.done?"line-through":"none",color:t.done?"#666":"#e0e0f0"}}>{t.text}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,textDecoration:t.done?"line-through":"none",color:t.done?"#9ca3af":"#1a1a2e"}}>{t.text}</div>
               <div style={{display:"flex",gap:8,marginTop:2,flexWrap:"wrap"}}>
-                {t.date&&<span style={{fontSize:10,color:"#666"}}>📅 {t.date}</span>}
-                {t.assignee&&<span style={{fontSize:10,color:"#a78bfa"}}>👤 {t.assignee}</span>}
+                {t.date&&<span style={{fontSize:10,color:"#9ca3af"}}>📅 {t.date}</span>}
+                {t.assignee&&<span style={{fontSize:10,color:"#6366f1"}}>👤 {t.assignee}</span>}
               </div>
             </div>
-            <button onClick={()=>delTask(t.id)} style={{background:"none",border:"none",color:"#4a4a6a",cursor:"pointer",fontSize:14}}>✕</button>
+            <button onClick={()=>delTask(t.id)} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14}}>✕</button>
           </div>))}
-          <div style={{marginTop:12,background:"#0F0F14",borderRadius:10,padding:12}}>
-            <div style={{fontSize:11,color:"#7c7c9e",marginBottom:8,fontWeight:600}}>משימה חדשה</div>
+          <div style={{marginTop:12,background:"#f8f9ff",borderRadius:10,padding:12,border:"1px solid #e5e7f0"}}>
+            <div style={{fontSize:11,color:"#6b7280",marginBottom:8,fontWeight:600}}>משימה חדשה</div>
             <input style={{...S.inp,marginBottom:8}} placeholder="תיאור המשימה..." value={nt.text} onChange={e=>setNt(n=>({...n,text:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addTask()}/>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              <select style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:7,padding:"7px 8px",color:"#E8E6F0",fontSize:11,outline:"none"}} value={nt.cat} onChange={e=>setNt(n=>({...n,cat:e.target.value}))}>{CATS.map(c=><option key={c}>{c}</option>)}</select>
-              <input style={{flex:1,minWidth:90,background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:7,padding:"7px 8px",color:"#E8E6F0",fontSize:11,outline:"none"}} placeholder="מי מטפל?" value={nt.assignee} onChange={e=>setNt(n=>({...n,assignee:e.target.value}))}/>
-              <input type="date" style={{background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:7,padding:"7px 8px",color:"#E8E6F0",fontSize:11,outline:"none"}} value={nt.date} onChange={e=>setNt(n=>({...n,date:e.target.value}))}/>
+              <select style={{background:"#fff",border:"1px solid #dde1f0",borderRadius:7,padding:"7px 8px",color:"#1a1a2e",fontSize:11,outline:"none"}} value={nt.cat} onChange={e=>setNt(n=>({...n,cat:e.target.value}))}>{CATS.map(c=><option key={c}>{c}</option>)}</select>
+              <input style={{flex:1,minWidth:90,background:"#fff",border:"1px solid #dde1f0",borderRadius:7,padding:"7px 8px",color:"#1a1a2e",fontSize:11,outline:"none"}} placeholder="מי מטפל?" value={nt.assignee} onChange={e=>setNt(n=>({...n,assignee:e.target.value}))}/>
+              <input type="date" style={{background:"#fff",border:"1px solid #dde1f0",borderRadius:7,padding:"7px 8px",color:"#1a1a2e",fontSize:11,outline:"none"}} value={nt.date} onChange={e=>setNt(n=>({...n,date:e.target.value}))}/>
               <button style={S.btn} onClick={addTask} disabled={saving}>{saving?"...":"+ הוסף"}</button>
             </div>
           </div>
         </div>
       </div>
-      {formData&&<div style={{position:"fixed",inset:0,background:"#00000090",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}} onClick={e=>e.target===e.currentTarget&&setFormData(null)}><PatientForm init={formData} onSave={savePatient} onCancel={()=>setFormData(null)} saving={saving}/></div>}
-      {confirmDelete&&<div style={{position:"fixed",inset:0,background:"#00000090",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
-        <div style={{background:"#1a1a2e",border:"1px solid #ef4444",borderRadius:16,padding:28,maxWidth:340,width:"100%",textAlign:"center"}}>
+      {formData&&<div style={{position:"fixed",inset:0,background:"#00000060",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}} onClick={e=>e.target===e.currentTarget&&setFormData(null)}><PatientForm init={formData} onSave={savePatient} onCancel={()=>setFormData(null)} saving={saving}/></div>}
+      {confirmDelete&&<div style={{position:"fixed",inset:0,background:"#00000060",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
+        <div style={{background:"#fff",border:"1px solid #fee2e2",borderRadius:16,padding:28,maxWidth:340,width:"100%",textAlign:"center",boxShadow:"0 8px 32px #0002"}}>
           <div style={{fontSize:32,marginBottom:12}}>🗑️</div>
-          <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>מחיקת מטופל</div>
-          <div style={{fontSize:13,color:"#9090b0",marginBottom:20}}>פעולה זו תמחק את המטופל וכל המשימות שלו. לא ניתן לשחזר.</div>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:8,color:"#1a1a2e"}}>מחיקת מטופל</div>
+          <div style={{fontSize:13,color:"#6b7280",marginBottom:20}}>פעולה זו תמחק את המטופל וכל המשימות שלו. לא ניתן לשחזר.</div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>setConfirmDelete(null)} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid #2a2a4a",background:"transparent",color:"#9090b0",cursor:"pointer",fontSize:13}}>ביטול</button>
+            <button onClick={()=>setConfirmDelete(null)} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid #dde1f0",background:"#fff",color:"#6b7280",cursor:"pointer",fontSize:13}}>ביטול</button>
             <button onClick={()=>deletePatient(confirmDelete)} style={{flex:1,padding:"10px",borderRadius:9,border:"none",background:"#ef4444",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>מחק</button>
           </div>
         </div>
@@ -289,14 +329,14 @@ function PatientForm({init,onSave,onCancel,saving}){
     </div>);
   }
 
-  return(<div style={{minHeight:"100vh"}}><Header patients={patients} tasks={tasks}/>
+  return(<div style={{minHeight:"100vh",background:"#f0f2f8"}}><Header patients={patients} tasks={tasks}/>
     <div style={{padding:"14px 20px",maxWidth:700,margin:"0 auto"}}>
       <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
-        <input style={{flex:1,minWidth:150,background:"#1a1a2e",border:"1px solid #2a2a4a",borderRadius:10,padding:"9px 14px",color:"#E8E6F0",fontSize:13,outline:"none"}} placeholder="🔍 חיפוש..." value={search} onChange={e=>setSearch(e.target.value)}/>
-        {["הכל",...STAGES].map(s=>(<button key={s} onClick={()=>setFilterStage(s)} style={{padding:"7px 11px",borderRadius:8,border:filterStage===s?"none":"1px solid #2a2a4a",background:filterStage===s?"linear-gradient(135deg,#6366f1,#a855f7)":"#1a1a2e",color:filterStage===s?"#fff":"#9090b0",cursor:"pointer",fontSize:11,fontWeight:filterStage===s?600:400}}>{s}</button>))}
+        <input style={{flex:1,minWidth:150,background:"#fff",border:"1px solid #dde1f0",borderRadius:10,padding:"9px 14px",color:"#1a1a2e",fontSize:13,outline:"none",boxShadow:"0 1px 3px #0001"}} placeholder="🔍 חיפוש..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        {["הכל",...STAGES].map(s=>(<button key={s} onClick={()=>setFilterStage(s)} style={{padding:"8px 12px",borderRadius:8,border:filterStage===s?"none":"1px solid #dde1f0",background:filterStage===s?"linear-gradient(135deg,#6366f1,#a855f7)":"#fff",color:filterStage===s?"#fff":"#6b7280",cursor:"pointer",fontSize:11,fontWeight:filterStage===s?600:400,boxShadow:filterStage===s?"none":"0 1px 3px #0001"}}>{s}</button>))}
         <button style={S.btn} onClick={()=>setFormData({...EMPTY})}>+ מטופל חדש</button>
       </div>
-      {filtered.length===0&&<div style={{textAlign:"center",color:"#4a4a6a",padding:40,fontSize:13}}>אין מטופלים</div>}
+      {filtered.length===0&&<div style={{textAlign:"center",color:"#9ca3af",padding:40,fontSize:13}}>אין מטופלים</div>}
       {filtered.map(p=>{
         const pt=tasks.filter(t=>t.patient_id===p.id);
         const done=pt.filter(t=>t.done).length;
@@ -306,32 +346,33 @@ function PatientForm({init,onSave,onCancel,saving}){
         return(<div key={p.id} style={{...S.card,cursor:"pointer"}} onClick={()=>setSelected(p.id)}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,flexShrink:0}}>{p.name[0]}</div>
-              <div><div style={{fontSize:14,fontWeight:700}}>{p.name}</div>
-                <div style={{fontSize:11,color:"#7c7c9e"}}>{p.age?`גיל ${p.age} · `:""}{p.treatment}</div>
+              <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0}}>{p.name[0]}</div>
+              <div>
+                <div style={{fontSize:15,fontWeight:700,color:"#1a1a2e"}}>{p.name}</div>
+                <div style={{fontSize:11,color:"#6b7280"}}>{p.age?`גיל ${p.age} · `:""}{p.treatment}</div>
               </div>
             </div>
             <div style={{display:"flex",gap:6,alignItems:"center"}}>
-              {isKosher&&<span style={{fontSize:9,background:"#10b98122",color:"#10b981",borderRadius:8,padding:"2px 5px"}}>כשר</span>}
+              {isKosher&&<span style={{fontSize:9,background:"#d1fae5",color:"#059669",borderRadius:8,padding:"2px 5px"}}>כשר</span>}
               <span style={S.badge(p.stage)}>{p.stage}</span>
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:5}}>
-            {p.coordinator&&<div style={{fontSize:11,color:"#9090b0"}}>👤 {p.coordinator}</div>}
-            {p.kupat_holim&&<div style={{fontSize:11,color:"#9090b0"}}>🏥 {p.kupat_holim}</div>}
-            {p.doctor_israel&&<div style={{fontSize:11,color:"#9090b0"}}>👨‍⚕️ {p.doctor_israel}</div>}
-            {p.treatment_start&&<div style={{fontSize:11,color:"#9090b0"}}>▶️ {p.treatment_start}</div>}
+            {p.coordinator&&<div style={{fontSize:11,color:"#6b7280"}}>👤 {p.coordinator}</div>}
+            {p.kupat_holim&&<div style={{fontSize:11,color:"#6b7280"}}>🏥 {p.kupat_holim}</div>}
+            {p.doctor_israel&&<div style={{fontSize:11,color:"#6b7280"}}>👨‍⚕️ {p.doctor_israel}</div>}
+            {p.food_frequency&&<div style={{fontSize:11,color:"#6b7280"}}>🍽️ {p.food_frequency}</div>}
           </div>
-          {p.medical_notes&&<div style={{fontSize:10,color:"#fca5a5",background:"#ef444411",borderRadius:5,padding:"3px 7px",marginBottom:5}}>⚠️ {p.medical_notes.slice(0,60)}{p.medical_notes.length>60?"...":""}</div>}
-          {urgent&&<span style={{background:"#ef444422",color:"#ef4444",border:"1px solid #ef444444",borderRadius:6,padding:"3px 8px",fontSize:10,fontWeight:600,display:"inline-block",marginBottom:5}}>⚠️ משימה דחופה</span>}
+          {p.medical_notes&&<div style={{fontSize:10,color:"#dc2626",background:"#fee2e2",borderRadius:5,padding:"3px 7px",marginBottom:5}}>⚠️ {p.medical_notes.slice(0,60)}{p.medical_notes.length>60?"...":""}</div>}
+          {urgent&&<span style={{background:"#fee2e2",color:"#ef4444",borderRadius:6,padding:"3px 8px",fontSize:10,fontWeight:600,display:"inline-block",marginBottom:5}}>⚠️ משימה דחופה</span>}
           {pt.length>0&&<div>
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:4,marginBottom:3,fontSize:10,color:"#7c7c9e"}}><span>משימות</span><span>{done}/{pt.length}</span></div>
-            <div style={{background:"#0F0F14",borderRadius:6,height:3}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/></div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:6,marginBottom:3,fontSize:10,color:"#9ca3af"}}><span>משימות</span><span>{done}/{pt.length}</span></div>
+            <div style={{background:"#e5e7f0",borderRadius:6,height:4}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/></div>
           </div>}
         </div>);
       })}
     </div>
-    {formData&&<div style={{position:"fixed",inset:0,background:"#00000090",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}} onClick={e=>e.target===e.currentTarget&&setFormData(null)}><PatientForm init={formData} onSave={savePatient} onCancel={()=>setFormData(null)} saving={saving}/></div>}
+    {formData&&<div style={{position:"fixed",inset:0,background:"#00000060",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}} onClick={e=>e.target===e.currentTarget&&setFormData(null)}><PatientForm init={formData} onSave={savePatient} onCancel={()=>setFormData(null)} saving={saving}/></div>}
   </div>);
 }
 
