@@ -294,8 +294,10 @@ function PatientsTab(){
   const [nt,setNt]=useState({text:"",cat:"רפואי",date:"",assignee:""});
   const [saving,setSaving]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(null);
+  const [translations,setTranslations]=useState([]);
+  const [newTrans,setNewTrans]=useState({translation_date:"",duration_minutes:"",notes:""});
   useEffect(()=>{loadAll();},[]);
-  async function loadAll(){setLoading(true);const [ps,ts]=await Promise.all([dbGet("patients","order=id.desc"),dbGet("tasks","order=id.asc")]);setPatients(Array.isArray(ps)?ps:[]);setTasks(Array.isArray(ts)?ts:[]);setLoading(false);}
+  async function loadAll(){setLoading(true);const [ps,ts,trs]=await Promise.all([dbGet("patients","order=id.desc"),dbGet("tasks","order=id.asc"),dbGet("translations","order=created_at.desc")]);setPatients(Array.isArray(ps)?ps:[]);setTasks(Array.isArray(ts)?ts:[]);setTranslations(Array.isArray(trs)?trs:[]);setLoading(false);}
   const patient=patients.find(p=>p.id===selected);
   const ptasks=tasks.filter(t=>t.patient_id===selected);
   const filtered=patients.filter(p=>(filterStage==="הכל"||p.stage===filterStage)&&p.name.includes(search));
@@ -304,6 +306,9 @@ function PatientsTab(){
   async function toggleTask(id,done){setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!done}:t));await dbPatch("tasks",id,{done:!done});}
   async function addTask(){if(!nt.text.trim()||!selected)return;setSaving(true);const res=await dbPost("tasks",{patient_id:selected,text:nt.text,cat:nt.cat,date:nt.date||null,done:false,assignee:nt.assignee||null});if(Array.isArray(res)&&res[0])setTasks(ts=>[...ts,res[0]]);setNt({text:"",cat:"רפואי",date:"",assignee:""});setSaving(false);}
   async function delTask(id){setTasks(ts=>ts.filter(t=>t.id!==id));await dbDelete("tasks",id);}
+  const ptranslations=translations.filter(t=>t.patient_id===selected);
+  async function addTranslation(){if(!newTrans.translation_date)return;const res=await dbPost("translations",{patient_id:selected,translation_date:newTrans.translation_date,duration_minutes:parseInt(newTrans.duration_minutes)||null,notes:newTrans.notes||null});if(Array.isArray(res)&&res[0])setTranslations(ts=>[res[0],...ts]);setNewTrans({translation_date:"",duration_minutes:"",notes:""}); }
+  async function delTranslation(id){setTranslations(ts=>ts.filter(t=>t.id!==id));await dbDelete("translations",id);}
 
   if(loading)return(<div style={{display:"flex",alignItems:"center",justifyContent:"center",padding:60}}><div style={{textAlign:"center",color:"#6b7280"}}><div style={{fontSize:32,marginBottom:12}}>🩺</div><div>טוען...</div></div></div>);
 
@@ -396,6 +401,28 @@ function PatientsTab(){
             {patient.car_plate&&<div style={S.row}><span>🔢</span><span>{patient.car_plate}</span></div>}
             {patient.car&&<div style={S.row}><span>📝</span><span>{patient.car}</span></div>}
           </div>}
+        </div>
+
+        <div style={S.section}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontWeight:700,fontSize:14}}>תרגומים</span><span style={{fontSize:11,color:"#6366f1"}}>{ptranslations.length} רשומות</span></div>
+          {ptranslations.length===0&&<div style={{textAlign:"center",color:"#9ca3af",padding:8,fontSize:12}}>אין תרגומים עדיין</div>}
+          {ptranslations.map(t=>(<div key={t.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 0",borderBottom:"1px solid #f3f4f6"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:600,color:"#1a1a2e"}}>📅 {t.translation_date}</div>
+              {t.duration_minutes&&<div style={{fontSize:12,color:"#6366f1"}}>⏱️ {t.duration_minutes} דקות</div>}
+              {t.notes&&<div style={{fontSize:12,color:"#6b7280"}}>📝 {t.notes}</div>}
+            </div>
+            <button onClick={()=>delTranslation(t.id)} style={{background:"none",border:"none",color:"#d1d5db",cursor:"pointer",fontSize:14}}>✕</button>
+          </div>))}
+          <div style={{marginTop:12,background:"#f8f9ff",borderRadius:10,padding:12,border:"1px solid #e5e7f0"}}>
+            <div style={{fontSize:11,color:"#6b7280",marginBottom:8,fontWeight:600}}>הוסף תרגום</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+              <div><label style={{fontSize:10,color:"#6b7280",display:"block",marginBottom:3}}>תאריך ושעה</label><input type="datetime-local" style={{...S.inp,marginBottom:0,fontSize:11}} value={newTrans.translation_date} onChange={e=>setNewTrans(n=>({...n,translation_date:e.target.value}))}/></div>
+              <div><label style={{fontSize:10,color:"#6b7280",display:"block",marginBottom:3}}>משך (דקות)</label><input type="number" style={{...S.inp,marginBottom:0,fontSize:11}} placeholder="60" value={newTrans.duration_minutes} onChange={e=>setNewTrans(n=>({...n,duration_minutes:e.target.value}))}/></div>
+              <div style={{gridColumn:"1/-1"}}><label style={{fontSize:10,color:"#6b7280",display:"block",marginBottom:3}}>הערות</label><input style={{...S.inp,marginBottom:0,fontSize:11}} placeholder="הערות..." value={newTrans.notes} onChange={e=>setNewTrans(n=>({...n,notes:e.target.value}))}/></div>
+            </div>
+            <button style={S.btn} onClick={addTranslation}>+ הוסף תרגום</button>
+          </div>
         </div>
 
         <div style={S.section}>
