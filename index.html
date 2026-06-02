@@ -28,15 +28,21 @@ async function dbDelete(t,id){await fetch(`${SB_URL}/rest/v1/${t}?id=eq.${id}`,{
 function cleanPatient(f){
   return {
     name:f.name||"",age:parseInt(f.age)||null,stage:f.stage||"טרום-טיפול",treatment:f.treatment||"טרם נקבע",
-    housing:f.housing||null,car:f.car||null,food:f.food||null,food_frequency:f.food_frequency||null,
+    housing:f.housing||null,
+    car:f.car||null,car_company:f.car_company||null,car_plate:f.car_plate||null,car_type:f.car_type||null,
+    food:f.food||null,food_frequency:f.food_frequency||null,
     notes:f.notes||null,coordinator:f.coordinator||null,languages:f.languages||null,
     kupat_holim:f.kupat_holim||null,treatment_start:f.treatment_start||null,treatment_end:f.treatment_end||null,
     contact_name:f.contact_name||null,contact_phone:f.contact_phone||null,contact_email:f.contact_email||null,
     contact_whatsapp:f.contact_whatsapp||null,contact1_relation:f.contact1_relation||null,
+    phone_local:f.phone_local||null,
     contact2_name:f.contact2_name||null,contact2_phone:f.contact2_phone||null,
-    contact2_email:f.contact2_email||null,contact2_whatsapp:f.contact2_whatsapp||null,contact2_relation:f.contact2_relation||null,
+    contact2_email:f.contact2_email||null,contact2_whatsapp:f.contact2_whatsapp||null,
+    contact2_relation:f.contact2_relation||null,contact2_phone_local:f.contact2_phone_local||null,
     doctor_israel:f.doctor_israel||null,doctor_austria:f.doctor_austria||null,
+    chemo_hospital:f.chemo_hospital||null,
     food_allergies:f.food_allergies||null,kosher:f.kosher?"true":"false",medical_notes:f.medical_notes||null,
+    needs_translation:f.needs_translation?"true":"false",translation_datetime:f.translation_datetime||null,
   };
 }
 
@@ -49,7 +55,7 @@ const SCOL={"טרום-טיפול":"#e67e22","בטיפול פעיל":"#e74c3c","�
 const CICO={"דיור":"🏠","רכב":"🚗","אוכל":"🍽️","רפואי":"🏥","אחר":"📋"};
 const today=new Date().toISOString().slice(0,10);
 const {useState,useEffect,useRef}=React;
-const EMPTY={name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",car:"",food:"",food_frequency:"",notes:"",coordinator:"",languages:"",kupat_holim:"",treatment_start:"",treatment_end:"",contact_name:"",contact_phone:"",contact_email:"",contact_whatsapp:"",contact1_relation:"",contact2_name:"",contact2_phone:"",contact2_email:"",contact2_whatsapp:"",contact2_relation:"",doctor_israel:"",doctor_austria:"",food_allergies:"",kosher:false,medical_notes:""};
+const EMPTY={name:"",age:"",stage:STAGES[0],treatment:TREATMENTS[0],housing:"",car:"",car_company:"",car_plate:"",car_type:"",food:"",food_frequency:"",notes:"",coordinator:"",languages:"",kupat_holim:"",treatment_start:"",treatment_end:"",contact_name:"",contact_phone:"",contact_email:"",contact_whatsapp:"",contact1_relation:"",phone_local:"",contact2_name:"",contact2_phone:"",contact2_email:"",contact2_whatsapp:"",contact2_relation:"",contact2_phone_local:"",doctor_israel:"",doctor_austria:"",chemo_hospital:"",food_allergies:"",kosher:false,medical_notes:"",needs_translation:false,translation_datetime:""};
 
 const S={
   btn:{padding:"10px 16px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:600},
@@ -77,7 +83,7 @@ function NavBar({tab,setTab}){
   );
 }
 
-function Header({title,subtitle}){
+function AppHeader({title,subtitle}){
   return(
     <div style={{background:"linear-gradient(135deg,#6366f1,#a855f7)",padding:"14px 20px",position:"sticky",top:0,zIndex:40,boxShadow:"0 2px 12px #6366f133"}}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -93,9 +99,11 @@ function PatientForm({init,onSave,onCancel,saving}){
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
   const inp2={...S.inp,marginBottom:0};
   const sec={fontSize:11,color:"#6366f1",fontWeight:700,marginBottom:10,borderBottom:"1px solid #e5e7f0",paddingBottom:6,marginTop:4};
+  const needsChemo=f.treatment==="כימותרפיה"||f.treatment==="שניהם";
   return(
     <div style={{background:"#f8f9ff",border:"1px solid #e5e7f0",borderRadius:18,padding:24,width:"100%",maxWidth:540,maxHeight:"92vh",overflowY:"auto"}}>
       <div style={{fontSize:17,fontWeight:700,marginBottom:20,color:"#1a1a2e"}}>{init.id?"✏️ עריכת מטופל":"➕ מטופל חדש"}</div>
+
       <div style={sec}>פרטים בסיסיים</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>שם מלא *</label><input style={inp2} value={f.name} onChange={e=>set("name",e.target.value)}/></div>
@@ -108,13 +116,25 @@ function PatientForm({init,onSave,onCancel,saving}){
         <div><label style={S.lbl}>שפות</label><input style={inp2} placeholder="עברית, אנגלית..." value={f.languages||""} onChange={e=>set("languages",e.target.value)}/></div>
         <div><label style={S.lbl}>מתאם בארגון</label><input style={inp2} value={f.coordinator||""} onChange={e=>set("coordinator",e.target.value)}/></div>
       </div>
+
       <div style={sec}>פן רפואי</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div><label style={S.lbl}>רופא בארץ</label><input style={inp2} value={f.doctor_israel||""} onChange={e=>set("doctor_israel",e.target.value)}/></div>
         <div><label style={S.lbl}>רופא באוסטריה</label><input style={inp2} value={f.doctor_austria||""} onChange={e=>set("doctor_austria",e.target.value)}/></div>
+        {needsChemo&&<div style={{gridColumn:"1/-1"}}><label style={S.lbl}>בית חולים לכימו</label><input style={inp2} value={f.chemo_hospital||""} onChange={e=>set("chemo_hospital",e.target.value)}/></div>}
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>הערות רפואיות חשובות</label><textarea style={{...inp2,height:70,resize:"none"}} value={f.medical_notes||""} onChange={e=>set("medical_notes",e.target.value)}/></div>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>הערות כלליות</label><input style={inp2} value={f.notes||""} onChange={e=>set("notes",e.target.value)}/></div>
       </div>
+
+      <div style={sec}>תרגום</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        <div style={{gridColumn:"1/-1",display:"flex",alignItems:"center",gap:10}}>
+          <input type="checkbox" id="trans" checked={f.needs_translation||false} onChange={e=>set("needs_translation",e.target.checked)} style={{width:18,height:18,accentColor:"#6366f1"}}/>
+          <label htmlFor="trans" style={{fontSize:13,color:"#1a1a2e",cursor:"pointer"}}>יש צורך בתרגום</label>
+        </div>
+        {f.needs_translation&&<div style={{gridColumn:"1/-1"}}><label style={S.lbl}>תאריך ושעת תרגום</label><input style={inp2} type="datetime-local" value={f.translation_datetime||""} onChange={e=>set("translation_datetime",e.target.value)}/></div>}
+      </div>
+
       <div style={sec}>אוכל</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>ספק אוכל</label><input style={inp2} value={f.food||""} onChange={e=>set("food",e.target.value)}/></div>
@@ -125,27 +145,36 @@ function PatientForm({init,onSave,onCancel,saving}){
           <label htmlFor="kosher" style={{fontSize:13,color:"#1a1a2e",cursor:"pointer"}}>כשר</label>
         </div>
       </div>
+
       <div style={sec}>לוגיסטיקה</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>דיור</label><input style={inp2} value={f.housing||""} onChange={e=>set("housing",e.target.value)}/></div>
-        <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>רכב</label><input style={inp2} value={f.car||""} onChange={e=>set("car",e.target.value)}/></div>
+        <div><label style={S.lbl}>חברת השכרה</label><input style={inp2} placeholder="Hertz, Avis..." value={f.car_company||""} onChange={e=>set("car_company",e.target.value)}/></div>
+        <div><label style={S.lbl}>סוג רכב</label><input style={inp2} placeholder="Toyota Corolla..." value={f.car_type||""} onChange={e=>set("car_type",e.target.value)}/></div>
+        <div><label style={S.lbl}>לוחית רישוי</label><input style={inp2} placeholder="123-456-78" value={f.car_plate||""} onChange={e=>set("car_plate",e.target.value)}/></div>
+        <div><label style={S.lbl}>הערות רכב</label><input style={inp2} value={f.car||""} onChange={e=>set("car",e.target.value)}/></div>
       </div>
+
       <div style={sec}>איש קשר ראשון</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>שם</label><input style={inp2} value={f.contact_name||""} onChange={e=>set("contact_name",e.target.value)}/></div>
         <div><label style={S.lbl}>קרבה</label><input style={inp2} placeholder="בן/בת זוג..." value={f.contact1_relation||""} onChange={e=>set("contact1_relation",e.target.value)}/></div>
-        <div><label style={S.lbl}>טלפון</label><input style={inp2} type="tel" value={f.contact_phone||""} onChange={e=>set("contact_phone",e.target.value)}/></div>
+        <div><label style={S.lbl}>טלפון ישראלי</label><input style={inp2} type="tel" value={f.contact_phone||""} onChange={e=>set("contact_phone",e.target.value)}/></div>
+        <div><label style={S.lbl}>טלפון מקומי</label><input style={inp2} type="tel" value={f.phone_local||""} onChange={e=>set("phone_local",e.target.value)}/></div>
         <div><label style={S.lbl}>וואטסאפ</label><input style={inp2} type="tel" value={f.contact_whatsapp||""} onChange={e=>set("contact_whatsapp",e.target.value)}/></div>
-        <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>אימייל</label><input style={inp2} type="email" value={f.contact_email||""} onChange={e=>set("contact_email",e.target.value)}/></div>
+        <div><label style={S.lbl}>אימייל</label><input style={inp2} type="email" value={f.contact_email||""} onChange={e=>set("contact_email",e.target.value)}/></div>
       </div>
+
       <div style={sec}>איש קשר שני</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
         <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>שם</label><input style={inp2} value={f.contact2_name||""} onChange={e=>set("contact2_name",e.target.value)}/></div>
         <div><label style={S.lbl}>קרבה</label><input style={inp2} placeholder="בן/בת זוג..." value={f.contact2_relation||""} onChange={e=>set("contact2_relation",e.target.value)}/></div>
-        <div><label style={S.lbl}>טלפון</label><input style={inp2} type="tel" value={f.contact2_phone||""} onChange={e=>set("contact2_phone",e.target.value)}/></div>
+        <div><label style={S.lbl}>טלפון ישראלי</label><input style={inp2} type="tel" value={f.contact2_phone||""} onChange={e=>set("contact2_phone",e.target.value)}/></div>
+        <div><label style={S.lbl}>טלפון מקומי</label><input style={inp2} type="tel" value={f.contact2_phone_local||""} onChange={e=>set("contact2_phone_local",e.target.value)}/></div>
         <div><label style={S.lbl}>וואטסאפ</label><input style={inp2} type="tel" value={f.contact2_whatsapp||""} onChange={e=>set("contact2_whatsapp",e.target.value)}/></div>
-        <div style={{gridColumn:"1/-1"}}><label style={S.lbl}>אימייל</label><input style={inp2} type="email" value={f.contact2_email||""} onChange={e=>set("contact2_email",e.target.value)}/></div>
+        <div><label style={S.lbl}>אימייל</label><input style={inp2} type="email" value={f.contact2_email||""} onChange={e=>set("contact2_email",e.target.value)}/></div>
       </div>
+
       <div style={{display:"flex",gap:8}}>
         <button onClick={onCancel} style={{flex:1,padding:"10px",borderRadius:9,border:"1px solid #dde1f0",background:"#fff",color:"#6b7280",cursor:"pointer",fontSize:13}}>ביטול</button>
         <button onClick={()=>onSave(f)} disabled={saving} style={{flex:2,padding:"10px",borderRadius:9,border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>{saving?"שומר...":"שמור"}</button>
@@ -161,38 +190,20 @@ function ChatTab(){
   const [nameSet,setNameSet]=useState(!!localStorage.getItem("chat_name"));
   const [sending,setSending]=useState(false);
   const bottomRef=useRef(null);
-
   useEffect(()=>{loadMsgs();const i=setInterval(loadMsgs,5000);return()=>clearInterval(i);},[]);
   useEffect(()=>{if(bottomRef.current)bottomRef.current.scrollIntoView({behavior:"smooth"});},[messages]);
-
-  async function loadMsgs(){
-    const r=await dbGet("messages","order=created_at.asc&limit=100");
-    if(Array.isArray(r))setMessages(r);
-  }
-  async function send(){
-    if(!text.trim()||!sender)return;
-    setSending(true);
-    await dbPost("messages",{sender,text});
-    setText("");
-    await loadMsgs();
-    setSending(false);
-  }
-  function setName(n){
-    setSender(n);
-    localStorage.setItem("chat_name",n);
-    setNameSet(true);
-  }
-
+  async function loadMsgs(){const r=await dbGet("messages","order=created_at.asc&limit=100");if(Array.isArray(r))setMessages(r);}
+  async function send(){if(!text.trim()||!sender)return;setSending(true);await dbPost("messages",{sender,text});setText("");await loadMsgs();setSending(false);}
+  function setName(n){setSender(n);localStorage.setItem("chat_name",n);setNameSet(true);}
   if(!nameSet)return(
     <div style={{padding:24,maxWidth:400,margin:"40px auto"}}>
       <div style={S.card}>
-        <div style={{fontSize:16,fontWeight:700,marginBottom:16,color:"#1a1a2e"}}>מה השם שלך?</div>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:16}}>מה השם שלך?</div>
         <input style={S.inp} placeholder="שם..." value={sender} onChange={e=>setSender(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sender.trim()&&setName(sender.trim())}/>
         <button style={{...S.btn,width:"100%"}} onClick={()=>sender.trim()&&setName(sender.trim())}>כניסה לצ'אט</button>
       </div>
     </div>
   );
-
   return(
     <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 180px)"}}>
       <div style={{flex:1,overflowY:"auto",padding:"12px 16px"}}>
@@ -204,9 +215,7 @@ function ChatTab(){
             <div key={m.id} style={{display:"flex",justifyContent:isMe?"flex-start":"flex-end",marginBottom:10}}>
               <div style={{maxWidth:"75%"}}>
                 {!isMe&&<div style={{fontSize:10,color:"#6b7280",marginBottom:2,textAlign:"right"}}>{m.sender}</div>}
-                <div style={{background:isMe?"linear-gradient(135deg,#6366f1,#a855f7)":"#fff",color:isMe?"#fff":"#1a1a2e",padding:"8px 12px",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",fontSize:16,boxShadow:"0 1px 3px #0001",border:isMe?"none":"1px solid #e5e7f0"}}>
-                  {m.text}
-                </div>
+                <div style={{background:isMe?"linear-gradient(135deg,#6366f1,#a855f7)":"#fff",color:isMe?"#fff":"#1a1a2e",padding:"10px 14px",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",fontSize:16,boxShadow:"0 1px 3px #0001",border:isMe?"none":"1px solid #e5e7f0"}}>{m.text}</div>
                 <div style={{fontSize:10,color:"#9ca3af",marginTop:2,textAlign:isMe?"left":"right"}}>{time}</div>
               </div>
             </div>
@@ -215,7 +224,7 @@ function ChatTab(){
         <div ref={bottomRef}/>
       </div>
       <div style={{padding:"8px 16px",background:"#fff",borderTop:"1px solid #e5e7f0",display:"flex",gap:8,alignItems:"center"}}>
-        <input style={{flex:1,background:"#f0f2f8",border:"1px solid #dde1f0",borderRadius:20,padding:"9px 14px",color:"#1a1a2e",fontSize:13,outline:"none"}} placeholder="כתוב הודעה..." value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/>
+        <input style={{flex:1,background:"#f0f2f8",border:"1px solid #dde1f0",borderRadius:20,padding:"9px 14px",color:"#1a1a2e",fontSize:14,outline:"none"}} placeholder="כתוב הודעה..." value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/>
         <button onClick={send} disabled={sending||!text.trim()} style={{width:40,height:40,borderRadius:"50%",border:"none",background:"linear-gradient(135deg,#6366f1,#a855f7)",color:"#fff",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>➤</button>
       </div>
     </div>
@@ -229,36 +238,17 @@ function TeamTasksTab(){
   const [dueDate,setDueDate]=useState("");
   const [saving,setSaving]=useState(false);
   const [filter,setFilter]=useState("הכל");
-
   useEffect(()=>{loadTasks();},[]);
-
-  async function loadTasks(){
-    const r=await dbGet("team_tasks","order=created_at.desc");
-    if(Array.isArray(r))setTasks(r);
-  }
-  async function addTask(){
-    if(!text.trim())return;
-    setSaving(true);
-    const res=await dbPost("team_tasks",{text,assignee:assignee||null,due_date:dueDate||null,done:false});
-    if(Array.isArray(res)&&res[0])setTasks(ts=>[res[0],...ts]);
-    setText("");setAssignee("");setDueDate("");setSaving(false);
-  }
-  async function toggle(id,done){
-    setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!done}:t));
-    await dbPatch("team_tasks",id,{done:!done});
-  }
-  async function del(id){
-    setTasks(ts=>ts.filter(t=>t.id!==id));
-    await dbDelete("team_tasks",id);
-  }
-
+  async function loadTasks(){const r=await dbGet("team_tasks","order=created_at.desc");if(Array.isArray(r))setTasks(r);}
+  async function addTask(){if(!text.trim())return;setSaving(true);const res=await dbPost("team_tasks",{text,assignee:assignee||null,due_date:dueDate||null,done:false});if(Array.isArray(res)&&res[0])setTasks(ts=>[res[0],...ts]);setText("");setAssignee("");setDueDate("");setSaving(false);}
+  async function toggle(id,done){setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!done}:t));await dbPatch("team_tasks",id,{done:!done});}
+  async function del(id){setTasks(ts=>ts.filter(t=>t.id!==id));await dbDelete("team_tasks",id);}
   const filtered=tasks.filter(t=>filter==="הכל"||(filter==="פתוח"&&!t.done)||(filter==="הושלם"&&t.done));
   const urgent=tasks.filter(t=>!t.done&&t.due_date&&t.due_date<=today).length;
-
   return(
     <div style={{padding:"14px 16px 80px",maxWidth:700,margin:"0 auto"}}>
       <div style={{...S.card,marginBottom:16}}>
-        <div style={{fontSize:13,fontWeight:700,marginBottom:12,color:"#1a1a2e"}}>משימה חדשה לצוות</div>
+        <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>משימה חדשה לצוות</div>
         <input style={S.inp} placeholder="תיאור המשימה..." value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addTask()}/>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           <input style={{flex:1,minWidth:100,...S.inp,marginBottom:0}} placeholder="אחראי..." value={assignee} onChange={e=>setAssignee(e.target.value)}/>
@@ -266,12 +256,10 @@ function TeamTasksTab(){
           <button style={S.btn} onClick={addTask} disabled={saving}>{saving?"...":"+ הוסף"}</button>
         </div>
       </div>
-
       <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
         {["הכל","פתוח","הושלם"].map(f=>(<button key={f} onClick={()=>setFilter(f)} style={{padding:"7px 14px",borderRadius:8,border:filter===f?"none":"1px solid #dde1f0",background:filter===f?"linear-gradient(135deg,#6366f1,#a855f7)":"#fff",color:filter===f?"#fff":"#6b7280",cursor:"pointer",fontSize:12,fontWeight:filter===f?600:400}}>{f}</button>))}
         {urgent>0&&<span style={{background:"#fee2e2",color:"#ef4444",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:600}}>⚠️ {urgent} דחוף</span>}
       </div>
-
       {filtered.length===0&&<div style={{textAlign:"center",color:"#9ca3af",padding:40}}>אין משימות</div>}
       {filtered.map(t=>{
         const isUrgent=!t.done&&t.due_date&&t.due_date<=today;
@@ -306,34 +294,13 @@ function PatientsTab(){
   const [nt,setNt]=useState({text:"",cat:"רפואי",date:"",assignee:""});
   const [saving,setSaving]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(null);
-
   useEffect(()=>{loadAll();},[]);
-
-  async function loadAll(){
-    setLoading(true);
-    const [ps,ts]=await Promise.all([dbGet("patients","order=id.desc"),dbGet("tasks","order=id.asc")]);
-    setPatients(Array.isArray(ps)?ps:[]);
-    setTasks(Array.isArray(ts)?ts:[]);
-    setLoading(false);
-  }
-
+  async function loadAll(){setLoading(true);const [ps,ts]=await Promise.all([dbGet("patients","order=id.desc"),dbGet("tasks","order=id.asc")]);setPatients(Array.isArray(ps)?ps:[]);setTasks(Array.isArray(ts)?ts:[]);setLoading(false);}
   const patient=patients.find(p=>p.id===selected);
   const ptasks=tasks.filter(t=>t.patient_id===selected);
   const filtered=patients.filter(p=>(filterStage==="הכל"||p.stage===filterStage)&&p.name.includes(search));
-
-  async function savePatient(f){
-    setSaving(true);
-    const body=cleanPatient(f);
-    if(f.id){await dbPatch("patients",f.id,body);setPatients(ps=>ps.map(p=>p.id===f.id?{...p,...body}:p));}
-    else{const res=await dbPost("patients",body);if(Array.isArray(res)&&res[0])setPatients(ps=>[res[0],...ps]);}
-    setFormData(null);setSaving(false);
-  }
-  async function deletePatient(id){
-    await dbDelete("patients",id);
-    setPatients(ps=>ps.filter(p=>p.id!==id));
-    setTasks(ts=>ts.filter(t=>t.patient_id!==id));
-    setConfirmDelete(null);setSelected(null);
-  }
+  async function savePatient(f){setSaving(true);const body=cleanPatient(f);if(f.id){await dbPatch("patients",f.id,body);setPatients(ps=>ps.map(p=>p.id===f.id?{...p,...body}:p));}else{const res=await dbPost("patients",body);if(Array.isArray(res)&&res[0])setPatients(ps=>[res[0],...ps]);}setFormData(null);setSaving(false);}
+  async function deletePatient(id){await dbDelete("patients",id);setPatients(ps=>ps.filter(p=>p.id!==id));setTasks(ts=>ts.filter(t=>t.patient_id!==id));setConfirmDelete(null);setSelected(null);}
   async function toggleTask(id,done){setTasks(ts=>ts.map(t=>t.id===id?{...t,done:!done}:t));await dbPatch("tasks",id,{done:!done});}
   async function addTask(){if(!nt.text.trim()||!selected)return;setSaving(true);const res=await dbPost("tasks",{patient_id:selected,text:nt.text,cat:nt.cat,date:nt.date||null,done:false,assignee:nt.assignee||null});if(Array.isArray(res)&&res[0])setTasks(ts=>[...ts,res[0]]);setNt({text:"",cat:"רפואי",date:"",assignee:""});setSaving(false);}
   async function delTask(id){setTasks(ts=>ts.filter(t=>t.id!==id));await dbDelete("tasks",id);}
@@ -344,6 +311,8 @@ function PatientsTab(){
     const done=ptasks.filter(t=>t.done).length;
     const pct=ptasks.length>0?Math.round(done/ptasks.length*100):0;
     const isKosher=patient.kosher==="true"||patient.kosher===true;
+    const needsTrans=patient.needs_translation==="true"||patient.needs_translation===true;
+    const needsChemo=patient.treatment==="כימותרפיה"||patient.treatment==="שניהם";
     return(<div style={{paddingBottom:70}}>
       <div style={{padding:16,maxWidth:700,margin:"0 auto"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -357,21 +326,24 @@ function PatientsTab(){
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <div style={{width:52,height:52,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#fff",flexShrink:0}}>{patient.name[0]}</div>
             <div>
-              <div style={{fontSize:20,fontWeight:800,color:"#1a1a2e"}}>{patient.name}</div>
+              <div style={{fontSize:20,fontWeight:800}}>{patient.name}</div>
               <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap",alignItems:"center"}}>
                 <span style={S.badge(patient.stage)}>{patient.stage}</span>
                 {patient.age&&<span style={{fontSize:11,color:"#6b7280"}}>גיל {patient.age}</span>}
                 {isKosher&&<span style={{fontSize:10,background:"#d1fae5",color:"#059669",border:"1px solid #a7f3d0",borderRadius:10,padding:"2px 7px"}}>כשר ✓</span>}
+                {needsTrans&&<span style={{fontSize:10,background:"#dbeafe",color:"#2563eb",border:"1px solid #bfdbfe",borderRadius:10,padding:"2px 7px"}}>🌐 תרגום</span>}
               </div>
             </div>
           </div>
         </div>
+
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
           <div style={S.section}>
             <div style={S.sTitle}>טיפול רפואי</div>
             <div style={S.row}><span>💊</span><span>{patient.treatment}</span></div>
             {patient.doctor_israel&&<div style={S.row}><span>👨‍⚕️</span><span>ארץ: {patient.doctor_israel}</span></div>}
             {patient.doctor_austria&&<div style={S.row}><span>👨‍⚕️</span><span>אוסטריה: {patient.doctor_austria}</span></div>}
+            {needsChemo&&patient.chemo_hospital&&<div style={S.row}><span>🏥</span><span>כימו: {patient.chemo_hospital}</span></div>}
             <div style={S.row}><span>▶️</span><span>{patient.treatment_start||"לא נקבע"}</span></div>
             <div style={S.row}><span>⏹️</span><span>{patient.treatment_end||"לא נקבע"}</span></div>
             {patient.medical_notes&&<div style={{fontSize:11,color:"#dc2626",background:"#fee2e2",borderRadius:6,padding:"6px 8px",marginTop:4}}>⚠️ {patient.medical_notes}</div>}
@@ -381,8 +353,13 @@ function PatientsTab(){
             <div style={S.row}><span>🏥</span><span>{patient.kupat_holim||"לא צוין"}</span></div>
             <div style={S.row}><span>🗣️</span><span>{patient.languages||"לא צוין"}</span></div>
             {patient.coordinator&&<div style={S.row}><span>👤</span><span>{patient.coordinator}</span></div>}
+            {needsTrans&&<div style={{marginTop:6,background:"#dbeafe",borderRadius:6,padding:"6px 8px"}}>
+              <div style={{fontSize:11,color:"#2563eb",fontWeight:600}}>🌐 תרגום נדרש</div>
+              {patient.translation_datetime&&<div style={{fontSize:11,color:"#2563eb"}}>📅 {patient.translation_datetime.replace("T"," ")}</div>}
+            </div>}
           </div>
         </div>
+
         <div style={S.section}>
           <div style={S.sTitle}>אוכל</div>
           <div style={S.row}><span>🍽️</span><span>{patient.food||"לא צוין"}</span></div>
@@ -390,26 +367,37 @@ function PatientsTab(){
           {patient.food_allergies&&<div style={S.row}><span>⚠️</span><span>רגישויות: {patient.food_allergies}</span></div>}
           <div style={S.row}><span>{isKosher?"✅":"❌"}</span><span>כשר</span></div>
         </div>
+
         {(patient.contact_name||patient.contact2_name)&&<div style={S.section}>
           <div style={S.sTitle}>אנשי קשר</div>
           {patient.contact_name&&<div style={{marginBottom:patient.contact2_name?12:0}}>
             <div style={{fontSize:11,color:"#6366f1",fontWeight:600,marginBottom:4}}>ראשון {patient.contact1_relation?`(${patient.contact1_relation})`:""}</div>
             <div style={S.row}><span>👤</span><span>{patient.contact_name}</span></div>
-            {patient.contact_phone&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact_phone}`} style={{color:"#6366f1"}}>{patient.contact_phone}</a></div>}
+            {patient.contact_phone&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact_phone}`} style={{color:"#6366f1"}}>🇮🇱 {patient.contact_phone}</a></div>}
+            {patient.phone_local&&<div style={S.row}><span>📞</span><a href={`tel:${patient.phone_local}`} style={{color:"#059669"}}>🌍 {patient.phone_local}</a></div>}
             {patient.contact_whatsapp&&<div style={S.row}><span>💬</span><a href={`https://wa.me/${patient.contact_whatsapp}`} style={{color:"#25d366"}}>{patient.contact_whatsapp}</a></div>}
           </div>}
           {patient.contact2_name&&<div>
             <div style={{fontSize:11,color:"#6366f1",fontWeight:600,marginBottom:4}}>שני {patient.contact2_relation?`(${patient.contact2_relation})`:""}</div>
             <div style={S.row}><span>👤</span><span>{patient.contact2_name}</span></div>
-            {patient.contact2_phone&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact2_phone}`} style={{color:"#6366f1"}}>{patient.contact2_phone}</a></div>}
+            {patient.contact2_phone&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact2_phone}`} style={{color:"#6366f1"}}>🇮🇱 {patient.contact2_phone}</a></div>}
+            {patient.contact2_phone_local&&<div style={S.row}><span>📞</span><a href={`tel:${patient.contact2_phone_local}`} style={{color:"#059669"}}>🌍 {patient.contact2_phone_local}</a></div>}
             {patient.contact2_whatsapp&&<div style={S.row}><span>💬</span><a href={`https://wa.me/${patient.contact2_whatsapp}`} style={{color:"#25d366"}}>{patient.contact2_whatsapp}</a></div>}
           </div>}
         </div>}
+
         <div style={S.section}>
           <div style={S.sTitle}>לוגיסטיקה</div>
           <div style={S.row}><span>🏠</span><span>{patient.housing||"לא צוין"}</span></div>
-          <div style={S.row}><span>🚗</span><span>{patient.car||"לא צוין"}</span></div>
+          {(patient.car_company||patient.car_type||patient.car_plate)&&<div style={{background:"#f8f9ff",borderRadius:8,padding:"8px 10px",marginTop:4}}>
+            <div style={{fontSize:11,color:"#6366f1",fontWeight:600,marginBottom:4}}>🚗 רכב שכור</div>
+            {patient.car_company&&<div style={S.row}><span>🏢</span><span>{patient.car_company}</span></div>}
+            {patient.car_type&&<div style={S.row}><span>🚗</span><span>{patient.car_type}</span></div>}
+            {patient.car_plate&&<div style={S.row}><span>🔢</span><span>{patient.car_plate}</span></div>}
+            {patient.car&&<div style={S.row}><span>📝</span><span>{patient.car}</span></div>}
+          </div>}
         </div>
+
         <div style={S.section}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontWeight:700,fontSize:14}}>משימות</span><span style={{fontSize:11,color:"#6366f1"}}>{done}/{ptasks.length} ({pct}%)</span></div>
           <div style={{background:"#e5e7f0",borderRadius:6,height:6,marginBottom:12}}><div style={{height:"100%",width:`${pct}%`,background:"linear-gradient(90deg,#6366f1,#a855f7)",borderRadius:6}}/></div>
@@ -466,21 +454,23 @@ function PatientsTab(){
         const pct=pt.length>0?Math.round(done/pt.length*100):0;
         const urgent=pt.some(t=>!t.done&&t.date&&t.date<=today);
         const isKosher=p.kosher==="true"||p.kosher===true;
+        const needsTrans=p.needs_translation==="true"||p.needs_translation===true;
         return(<div key={p.id} style={{...S.card,cursor:"pointer"}} onClick={()=>setSelected(p.id)}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#a855f7)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0}}>{p.name[0]}</div>
-              <div><div style={{fontSize:15,fontWeight:700,color:"#1a1a2e"}}>{p.name}</div><div style={{fontSize:11,color:"#6b7280"}}>{p.age?`גיל ${p.age} · `:""}{p.treatment}</div></div>
+              <div><div style={{fontSize:15,fontWeight:700}}>{p.name}</div><div style={{fontSize:11,color:"#6b7280"}}>{p.age?`גיל ${p.age} · `:""}{p.treatment}</div></div>
             </div>
-            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            <div style={{display:"flex",gap:4,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
               {isKosher&&<span style={{fontSize:9,background:"#d1fae5",color:"#059669",borderRadius:8,padding:"2px 5px"}}>כשר</span>}
+              {needsTrans&&<span style={{fontSize:9,background:"#dbeafe",color:"#2563eb",borderRadius:8,padding:"2px 5px"}}>🌐</span>}
               <span style={S.badge(p.stage)}>{p.stage}</span>
             </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:5}}>
             {p.coordinator&&<div style={{fontSize:11,color:"#6b7280"}}>👤 {p.coordinator}</div>}
             {p.kupat_holim&&<div style={{fontSize:11,color:"#6b7280"}}>🏥 {p.kupat_holim}</div>}
-            {p.doctor_israel&&<div style={{fontSize:11,color:"#6b7280"}}>👨‍⚕️ {p.doctor_israel}</div>}
+            {p.car_type&&<div style={{fontSize:11,color:"#6b7280"}}>🚗 {p.car_type}</div>}
             {p.food_frequency&&<div style={{fontSize:11,color:"#6b7280"}}>🍽️ {p.food_frequency}</div>}
           </div>
           {p.medical_notes&&<div style={{fontSize:10,color:"#dc2626",background:"#fee2e2",borderRadius:5,padding:"3px 7px",marginBottom:5}}>⚠️ {p.medical_notes.slice(0,60)}{p.medical_notes.length>60?"...":""}</div>}
@@ -501,7 +491,7 @@ function App(){
   const titles={patients:"מעקב מטופלים",team:"משימות צוות",chat:"צ'אט פנימי"};
   const subs={patients:"ניהול תומך מטופלי כתף",team:"משימות משותפות לצוות",chat:"תקשורת פנים-ארגונית"};
   return(<div style={{minHeight:"100vh",background:"#f0f2f8"}}>
-    <Header title={titles[tab]} subtitle={subs[tab]}/>
+    <AppHeader title={titles[tab]} subtitle={subs[tab]}/>
     {tab==="patients"&&<PatientsTab/>}
     {tab==="team"&&<TeamTasksTab/>}
     {tab==="chat"&&<ChatTab/>}
